@@ -4,6 +4,7 @@ import com.bookstore.accounts.dto.AccountDto;
 import com.bookstore.accounts.dto.InformationDto;
 import com.bookstore.accounts.entity.Account;
 import com.bookstore.accounts.entity.Information;
+import com.bookstore.accounts.exception.ResourceNotFoundException;
 import com.bookstore.accounts.exception.UsernameAlreadyExistException;
 import com.bookstore.accounts.mapper.AccountMapper;
 import com.bookstore.accounts.mapper.InformationMapper;
@@ -26,13 +27,11 @@ public class AccountServiceImpl implements IAccountService {
     @Override
     public void createAccount(AccountDto accountDto) {
         Account account = AccountMapper.mapToAccount(accountDto, new Account());
-        account.setUsername("test");
         Optional<Account> optionalAccount = accountRepository.findByUsername(account.getUsername());
         if(optionalAccount.isPresent()){
             throw new UsernameAlreadyExistException("Username already exist");
         }
-        account.setPassword("test");
-        account.setRole("Customers");
+        account.setCreatedBy("me");
         Account savedAccount = accountRepository.save(account);
         informationRepository.save(createNewInformation(savedAccount));
     }
@@ -45,6 +44,36 @@ public class AccountServiceImpl implements IAccountService {
         newInformation.setPhone("123456");
         newInformation.setAddress("1 street");
         newInformation.setAvatar(null);
+        newInformation.setCreatedBy("me");
         return newInformation;
+    }
+
+    @Override
+    public InformationDto fetchInformation(Long accountId){
+        Information information = informationRepository.findByAccountId(accountId).orElseThrow(
+                () -> new ResourceNotFoundException("Cannot find account information")
+        );
+
+        return InformationMapper.mapToInformationDto(information, new InformationDto());
+    }
+
+    @Override
+    public boolean updateInformation(Long accountId, InformationDto informationDto) {
+        Information information = informationRepository.findByAccountId(accountId).orElseThrow(
+                () -> new ResourceNotFoundException("Account not existed")
+        );
+        InformationMapper.mapToInformation(informationDto, information);
+        informationRepository.save(information);
+        return true;
+    }
+
+    @Override
+    public boolean deleteAccount(Long accountId) {
+        Account account = accountRepository.findById(accountId).orElseThrow(
+                () ->  new ResourceNotFoundException("Account not existed")
+        );
+        informationRepository.deleteByAccountId(accountId);
+        accountRepository.deleteById(accountId);
+        return true;
     }
 }
