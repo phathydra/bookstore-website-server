@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @CrossOrigin("*")
 @RestController
 @RequestMapping(path = "/api/account", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -66,4 +68,17 @@ public class AccountController {
                     .body(new ResponseDto(AccountConstants.STATUS_500, AccountConstants.MESSAGE_500));
         }
     }
+
+    @GetMapping("/allAccount")
+    public ResponseEntity<List<AccountDto>> fetchAllAccounts() {
+        List<AccountDto> accounts = iAccountService.getAllAccounts();
+        return ResponseEntity.status(HttpStatus.OK).body(accounts);
+    }
+
+    @GetMapping("/allInformation")
+    public ResponseEntity<List<InformationDto>> fetchAllInformation() {
+        List<InformationDto> informationList = iAccountService.getAllInformation();
+        return ResponseEntity.status(HttpStatus.OK).body(informationList);
+    }
+
 }

@@ -13,7 +13,9 @@ import com.bookstore.accounts.repository.InformationRepository;
 import com.bookstore.accounts.service.IAccountService;
 import lombok.AllArgsConstructor;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -75,5 +77,21 @@ public class AccountServiceImpl implements IAccountService {
         informationRepository.deleteByAccountId(accountId);
         accountRepository.deleteById(accountId);
         return true;
+    }
+
+    @Override
+    public List<AccountDto> getAllAccounts() {
+        List<Account> accounts = accountRepository.findAll();
+        return accounts.stream()
+                .map(account -> AccountMapper.mapToAccountDto(account, new AccountDto()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<InformationDto> getAllInformation() {
+        List<Information> informationList = informationRepository.findAll();
+        return informationList.stream()
+                .map(info -> InformationMapper.mapToInformationDto(info, new InformationDto()))
+                .collect(Collectors.toList());
     }
 }

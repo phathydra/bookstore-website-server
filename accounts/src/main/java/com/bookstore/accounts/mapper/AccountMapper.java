@@ -4,7 +4,8 @@ import com.bookstore.accounts.dto.AccountDto;
 import com.bookstore.accounts.entity.Account;
 
 public class AccountMapper {
-    public static AccountDto mapToAccountDto(Account account,AccountDto accountDto){
+    public static AccountDto mapToAccountDto(Account account, AccountDto accountDto) {
+        accountDto.setAccountId(account.getAccountId()); // Thêm dòng này
         accountDto.setUsername(account.getUsername());
         accountDto.setPassword(account.getPassword());
         accountDto.setRole(account.getRole());
