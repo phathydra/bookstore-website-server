@@ -1,20 +1,17 @@
 package com.bookstore.accounts.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
+@Document(collection = "information")
 @Getter @Setter @ToString @AllArgsConstructor @NoArgsConstructor
 public class Information extends BaseEntity{
 
-    private Long accountId;
+    private String accountId;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     private String name;
 

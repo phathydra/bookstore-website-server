@@ -1,17 +1,16 @@
 package com.bookstore.accounts.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-@MappedSuperclass
 @Getter @Setter @ToString
 public class BaseEntity {
-    @Column(updatable = false)
+
+    @Field("created_by")
     private String createdBy;
 
-    @Column(insertable = false)
+    @Field("updated_by")
     private String updatedBy;
 }
