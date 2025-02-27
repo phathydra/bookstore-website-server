@@ -5,8 +5,8 @@ import lombok.Data;
 @Data
 public class InformationDto {
 
-    private Long id;
-    private Long accountId;
+    private String id;
+    private String accountId;
 
     private String name;
 
