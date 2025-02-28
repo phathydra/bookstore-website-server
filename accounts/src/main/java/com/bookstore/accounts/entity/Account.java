@@ -6,7 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "accounts")
 @Getter @Setter @ToString @AllArgsConstructor @NoArgsConstructor
-public class Account extends BaseEntity {
+public class Account{
 
     @Id
     private String accountId;

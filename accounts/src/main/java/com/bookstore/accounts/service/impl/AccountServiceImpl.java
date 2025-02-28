@@ -33,7 +33,6 @@ public class AccountServiceImpl implements IAccountService {
         if(optionalAccount.isPresent()){
             throw new UsernameAlreadyExistException("Username already exists");
         }
-        account.setCreatedBy("me");
         Account savedAccount = accountRepository.save(account);
         informationRepository.save(createNewInformation(savedAccount));
     }
@@ -46,7 +45,6 @@ public class AccountServiceImpl implements IAccountService {
         newInformation.setPhone("");
         newInformation.setAddress("");
         newInformation.setAvatar(null);
-        newInformation.setCreatedBy("me");
         return newInformation;
     }
 
@@ -114,8 +112,8 @@ public class AccountServiceImpl implements IAccountService {
 
     @Override
     public boolean checkAdminRole(String username, String password) {
-        Account account = accountRepository.findByUsernameAndPassword(username, password);
-        return account != null && "Admin".equals(account.getRole());
+        Optional<Account> account = accountRepository.findByUsernameAndPassword(username, password);
+        return account.isPresent() && "Admin".equals(account.get().getRole());
     }
 
 }
