@@ -28,12 +28,9 @@ public class BookServiceImpl implements IBookService {
         if (bookDto.getBookId() != null && bookRepository.existsById(bookDto.getBookId())) {
             throw new BookAlreadyExistsException("Trùng ID: " + bookDto.getBookId());
         }
-        book.setCreateAT(LocalDateTime.now());
-        book.setCreateBy("Anonymous");
         Book savedBook = bookRepository.save(book);
         System.out.println("Saved Book ID: " + savedBook.getBookId());
     }
-
     @Override
     public void updateBook(String bookId, BookDto bookDto) {
         Optional<Book> optionalBook = bookRepository.findById(bookId);
@@ -53,8 +50,6 @@ public class BookServiceImpl implements IBookService {
         existingBook.setBookStockQuantity(bookDto.getBookStockQuantity());
         existingBook.setBookSupplier(bookDto.getBookSupplier());
         existingBook.setBookDescription(bookDto.getBookDescription());
-        existingBook.setUpdateAT(LocalDateTime.now());
-        existingBook.setUpdateBy("Anonymous");
 
         bookRepository.save(existingBook);
     }
