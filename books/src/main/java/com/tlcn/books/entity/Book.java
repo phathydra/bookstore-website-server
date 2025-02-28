@@ -12,7 +12,7 @@ import java.math.RoundingMode;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Book extends BaseEntity {
+public class Book{
 
     @Id
     private String bookId;
