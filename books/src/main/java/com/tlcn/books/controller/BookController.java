@@ -8,6 +8,7 @@ import com.tlcn.books.service.IBookService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -70,14 +71,15 @@ public class BookController {
     }
 
     @GetMapping("")
-    public ResponseEntity<List<BookDto>> getAllBooks() {
+    public ResponseEntity<Page<BookDto>> getAllBooks(@RequestParam(defaultValue = "0") int page,
+                                                     @RequestParam(defaultValue = "10") int size) {
         try {
-            List<BookDto> books = iBookService.getAllBooks();
+            Page<BookDto> books = iBookService.getAllBooks(page, size);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.emptyList());
+                    .body(Page.empty());
         }
     }
 
@@ -94,9 +96,11 @@ public class BookController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<List<BookDto>> searchBooks(@RequestBody SearchCriteria searchCriteria) {
+    public ResponseEntity<List<BookDto>> searchBooks(@RequestParam(defaultValue = "0") int page,
+                                                     @RequestParam(defaultValue = "10") int size,
+                                                     @RequestBody SearchCriteria searchCriteria) {
         try {
-            List<BookDto> books = iBookService.searchBooks(searchCriteria);
+            List<BookDto> books = iBookService.searchBooks(page, size, searchCriteria);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity
