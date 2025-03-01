@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CrossOrigin("*")
 @RestController
@@ -32,13 +33,13 @@ public class AccountController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody AccountDto accountDto) {
-        Account account = accountRepository.findByUsernameAndPassword(accountDto.getUsername(), accountDto.getPassword());
+        Optional<Account> account = accountRepository.findByUsernameAndPassword(accountDto.getUsername(), accountDto.getPassword());
 
         Map<String, Object> response = new HashMap<>();
         if (account != null) {
             response.put("statusCode", "200");
             response.put("statusMsg", "Login successful");
-            response.put("accountId", account.getAccountId()); // Chỉ trả về accountId
+            response.put("accountId", account.get().getAccountId()); // Chỉ trả về accountId
 
             return ResponseEntity.status(HttpStatus.OK).body(response);
         } else {
