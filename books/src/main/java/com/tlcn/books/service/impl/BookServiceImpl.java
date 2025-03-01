@@ -9,6 +9,9 @@ import com.tlcn.books.mapper.BookMapper;
 import com.tlcn.books.repository.BookRepository;
 import com.tlcn.books.service.IBookService;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -66,11 +69,11 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public List<BookDto> getAllBooks() {
-        List<Book> books = bookRepository.findAll();
-        return books.stream()
-                .map(book -> BookMapper.mapToBookDto(book, new BookDto()))
-                .collect(Collectors.toList());
+    public Page<BookDto> getAllBooks(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> books = bookRepository.findAllBy(pageable);
+        Page<BookDto> bookDtos = books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+        return bookDtos;
     }
 
     @Override
@@ -83,8 +86,8 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public List<BookDto> searchBooks(SearchCriteria searchCriteria) {
-        return getAllBooks().stream()
+    public List<BookDto> searchBooks(int page, int size, SearchCriteria searchCriteria) {
+        return getAllBooks(page, size).stream()
                 .filter(book -> (searchCriteria.getBookName() == null || book.getBookName().equalsIgnoreCase(searchCriteria.getBookName())) &&
                         (searchCriteria.getBookAuthor() == null || book.getBookAuthor().equalsIgnoreCase(searchCriteria.getBookAuthor())) &&
                         (searchCriteria.getBookCategory() == null || book.getBookCategory().equalsIgnoreCase(searchCriteria.getBookCategory())) &&

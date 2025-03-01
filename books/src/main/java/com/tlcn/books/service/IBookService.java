@@ -2,6 +2,8 @@ package com.tlcn.books.service;
 
 import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.SearchCriteria;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -17,9 +19,9 @@ public interface IBookService {
 
     void deleteBook(String bookId);
 
-    List<BookDto> getAllBooks();
+    Page<BookDto> getAllBooks(int page, int size);
 
     BookDto getBookById(String bookId);
 
-    List<BookDto> searchBooks(SearchCriteria searchCriteria);
+    List<BookDto> searchBooks(int page, int size, SearchCriteria searchCriteria);
 }
