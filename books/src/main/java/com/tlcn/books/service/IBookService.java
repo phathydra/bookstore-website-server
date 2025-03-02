@@ -23,5 +23,5 @@ public interface IBookService {
 
     BookDto getBookById(String bookId);
 
-    List<BookDto> searchBooks(int page, int size, SearchCriteria searchCriteria);
+    Page<BookDto> searchBooks(int page, int size, String input);
 }

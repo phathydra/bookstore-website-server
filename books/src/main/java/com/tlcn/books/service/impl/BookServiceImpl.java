@@ -72,8 +72,7 @@ public class BookServiceImpl implements IBookService {
     public Page<BookDto> getAllBooks(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Book> books = bookRepository.findAllBy(pageable);
-        Page<BookDto> bookDtos = books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
-        return bookDtos;
+        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
     }
 
     @Override
@@ -86,14 +85,10 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public List<BookDto> searchBooks(int page, int size, SearchCriteria searchCriteria) {
-        return getAllBooks(page, size).stream()
-                .filter(book -> (searchCriteria.getBookName() == null || book.getBookName().equalsIgnoreCase(searchCriteria.getBookName())) &&
-                        (searchCriteria.getBookAuthor() == null || book.getBookAuthor().equalsIgnoreCase(searchCriteria.getBookAuthor())) &&
-                        (searchCriteria.getBookCategory() == null || book.getBookCategory().equalsIgnoreCase(searchCriteria.getBookCategory())) &&
-                        (searchCriteria.getBookPublisher() == null || book.getBookPublisher().equalsIgnoreCase(searchCriteria.getBookPublisher())) &&
-                        (searchCriteria.getBookLanguage() == null || book.getBookLanguage().equalsIgnoreCase(searchCriteria.getBookLanguage())))
-                .collect(Collectors.toList());
+    public Page<BookDto> searchBooks(int page, int size, String input){
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> books = bookRepository.findByBookNameContainingIgnoreCaseOrBookAuthorContainingIgnoreCase(pageable, input, input);
+        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
     }
 
 }

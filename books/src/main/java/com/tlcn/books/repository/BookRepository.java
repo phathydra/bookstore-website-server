@@ -14,4 +14,6 @@ public interface BookRepository extends MongoRepository<Book, String> {
     Optional<Book> findByBookId(String bookId);
 
     Page<Book> findAllBy(Pageable pageable);
+
+    Page<Book> findByBookNameContainingIgnoreCaseOrBookAuthorContainingIgnoreCase(Pageable pageable, String bookName, String bookAuthor);
 }

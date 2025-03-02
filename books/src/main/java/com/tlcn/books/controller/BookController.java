@@ -97,16 +97,16 @@ public class BookController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<List<BookDto>> searchBooks(@RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<Page<BookDto>> searchBooks(@RequestParam(defaultValue = "0") int page,
                                                      @RequestParam(defaultValue = "10") int size,
-                                                     @RequestBody SearchCriteria searchCriteria) {
+                                                     @RequestParam String input) {
         try {
-            List<BookDto> books = iBookService.searchBooks(page, size, searchCriteria);
+            Page<BookDto> books = iBookService.searchBooks(page, size, input);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.emptyList());
+                    .body(Page.empty());
         }
     }
 }
