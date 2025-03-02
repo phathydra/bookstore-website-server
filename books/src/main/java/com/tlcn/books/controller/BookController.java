@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Collections;
 
+@CrossOrigin(origins = "http://localhost:3001")
 @RestController
 @RequestMapping(path = "/api/book", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class BookController {
