@@ -109,4 +109,14 @@ public class BookController {
                     .body(Page.empty());
         }
     }
+    @GetMapping("/{bookId}/recommendations")
+    public ResponseEntity<List<BookDto>> getRecommendedBooks(@PathVariable String bookId) {
+        try {
+            List<BookDto> recommendedBooks = iBookService.getRecommendedBooks(bookId);
+            return ResponseEntity.ok(recommendedBooks);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+        }
+    }
+
 }
