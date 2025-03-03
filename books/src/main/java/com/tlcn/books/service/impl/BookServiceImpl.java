@@ -15,8 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -89,6 +88,47 @@ public class BookServiceImpl implements IBookService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Book> books = bookRepository.findByBookNameContainingIgnoreCaseOrBookAuthorContainingIgnoreCase(pageable, input, input);
         return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+    }
+
+    @Override
+    public List<BookDto> getRecommendedBooks(String bookId) {
+        Optional<Book> optionalBook = bookRepository.findById(bookId);
+        if (optionalBook.isEmpty()) {
+            throw new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId);
+        }
+
+        Book book = optionalBook.get();
+
+        List<Book> booksByCategory = bookRepository.findTop5ByBookCategoryAndBookIdNot(book.getBookCategory(), bookId);
+
+        List<Book> booksByAuthor = bookRepository.findTop5ByBookAuthorAndBookIdNot(book.getBookAuthor(), bookId);
+
+        List<Book> recommendedBooks = new ArrayList<>();
+
+        // Thêm sách theo thể loại và tác giả
+        for (Book b : booksByCategory) {
+            if (!recommendedBooks.contains(b)) {
+                recommendedBooks.add(b);
+            }
+        }
+        for (Book b : booksByAuthor) {
+            if (!recommendedBooks.contains(b)) {
+                recommendedBooks.add(b);
+            }
+        }
+        if (recommendedBooks.size() < 3) {
+            List<Book> additionalBooks = (List<Book>) bookRepository.findTop3ByOrderByBookNameAsc();
+            for (Book additionalBook : additionalBooks) {
+                if (!recommendedBooks.contains(additionalBook) && !additionalBook.getBookId().equals(bookId)) {
+                    recommendedBooks.add(additionalBook);
+                }
+                if (recommendedBooks.size() >= 3) break;
+            }
+        }
+        return recommendedBooks.stream()
+                .limit(5)
+                .map(b -> BookMapper.mapToBookDto(b, new BookDto()))
+                .collect(Collectors.toList());
     }
 
 }
