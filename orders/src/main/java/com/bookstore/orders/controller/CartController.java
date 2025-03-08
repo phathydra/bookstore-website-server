@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@CrossOrigin(origins = "http://localhost:3001")
 @RestController
 @RequestMapping("/cart")
 public class CartController {
@@ -24,39 +25,121 @@ public class CartController {
         this.cartRepository = cartRepository;
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<?> addToCart(@Valid @RequestBody CartDto cartDto) {
-        // Tìm giỏ hàng theo accountId
-        Optional<Cart> cartOptional = cartRepository.findByAccountId(cartDto.getAccountId());
+    // Tạo giỏ hàng mặc định cho account nếu chưa có
+    @PostMapping("/create/{accountId}")
+    public ResponseEntity<?> createCart(@PathVariable String accountId) {
+        Optional<Cart> cartOptional = cartRepository.findByAccountId(accountId);
 
-        Cart cart;
-        if (cartOptional.isPresent()) {
-            cart = cartOptional.get();
-        } else {
-            // Tạo giỏ hàng mới nếu chưa có
-            cart = new Cart();
-            cart.setAccountId(cartDto.getAccountId());
+        if (cartOptional.isEmpty()) {
+            Cart cart = new Cart();
+            cart.setAccountId(accountId);
             cart.setCartItems(new ArrayList<>());
-            cart = cartRepository.save(cart);
+            cartRepository.save(cart);
+            return ResponseEntity.ok("Giỏ hàng mặc định đã được tạo.");
         }
 
-        // Xóa danh sách cũ (nếu muốn cập nhật lại toàn bộ)
-        cart.getCartItems().clear();
+        return ResponseEntity.ok("Giỏ hàng đã tồn tại.");
+    }
 
-        // Để sử dụng trong lambda, gán cart cho biến final
-        final Cart finalCart = cart;
-        List<CartItem> cartItems = cartDto.getCartItems().stream()
-                .map(cartItemDto -> {
-                    CartItem cartItem = new CartItem();
-                    cartItem.setBookId(cartItemDto.getBookId());
-                    cartItem.setQuantity(cartItemDto.getQuantity());
-                    return cartItem;
-                })
-                .collect(Collectors.toList());
+    // Lấy giỏ hàng theo accountId
+    @GetMapping("/{accountId}")
+    public ResponseEntity<?> getCartByAccountId(@PathVariable String accountId) {
+        Optional<Cart> cartOptional = cartRepository.findByAccountId(accountId);
 
-        finalCart.getCartItems().addAll(cartItems);
-        cartRepository.save(finalCart);
+        if (cartOptional.isPresent()) {
+            Cart cart = cartOptional.get();
+            List<CartItemDto> cartItemDtos = cart.getCartItems().stream()
+                    .map(cartItem -> new CartItemDto(
+                            cartItem.getBookId(),
+                            cartItem.getBookName(),
+                            cartItem.getBookImage(),
+                            cartItem.getQuantity(), // Đây có thể bị sai thứ tự
+                            cartItem.getPrice()))  // Kiểm tra thứ tự của quantity & price
+                    .collect(Collectors.toList());
 
+            return ResponseEntity.ok(new CartDto(cart.getAccountId(), cartItemDtos));
+        }
+        return ResponseEntity.badRequest().body("Không tìm thấy giỏ hàng!");
+    }
+
+
+    // Thêm sản phẩm vào giỏ hàng
+    @PostMapping("/add")
+    public ResponseEntity<?> addToCart(@Valid @RequestBody CartDto cartDto) {
+        Optional<Cart> cartOptional = cartRepository.findByAccountId(cartDto.getAccountId());
+        Cart cart = cartOptional.orElseGet(() -> {
+            Cart newCart = new Cart();
+            newCart.setAccountId(cartDto.getAccountId());
+            newCart.setCartItems(new ArrayList<>());
+            return cartRepository.save(newCart);
+        });
+
+        for (CartItemDto cartItemDto : cartDto.getCartItems()) {
+            Optional<CartItem> existingItem = cart.getCartItems().stream()
+                    .filter(item -> item.getBookId().equals(cartItemDto.getBookId()))
+                    .findFirst();
+
+            if (existingItem.isPresent()) {
+                CartItem cartItem = existingItem.get();
+                cartItem.setQuantity(cartItem.getQuantity() + cartItemDto.getQuantity());
+            } else {
+                CartItem newItem = new CartItem();
+                newItem.setBookId(cartItemDto.getBookId());
+                newItem.setBookName(cartItemDto.getBookName());
+                newItem.setBookImage(cartItemDto.getBookImage()); // Lưu ảnh sách
+                newItem.setPrice(cartItemDto.getPrice());
+                newItem.setQuantity(cartItemDto.getQuantity());
+                cart.getCartItems().add(newItem);
+            }
+        }
+
+        cartRepository.save(cart);
         return ResponseEntity.ok("Giỏ hàng đã được cập nhật!");
+    }
+
+
+    // Cập nhật số lượng sản phẩm trong giỏ hàng
+    @PutMapping("/update/{accountId}/{bookId}")
+    public ResponseEntity<?> updateQuantity(
+            @PathVariable String accountId,
+            @PathVariable String bookId,
+            @RequestParam int quantity) {
+
+        Optional<Cart> cartOptional = cartRepository.findByAccountId(accountId);
+        if (cartOptional.isPresent()) {
+            Cart cart = cartOptional.get();
+            List<CartItem> cartItems = cart.getCartItems();
+
+            Optional<CartItem> cartItemOptional = cartItems.stream()
+                    .filter(item -> item.getBookId().equals(bookId))
+                    .findFirst();
+
+            if (cartItemOptional.isPresent()) {
+                CartItem cartItem = cartItemOptional.get();
+                if (quantity > 0) {
+                    cartItem.setQuantity(quantity);
+                } else {
+                    cartItems.remove(cartItem);
+                }
+                cartRepository.save(cart);
+                return ResponseEntity.ok("Số lượng sản phẩm đã được cập nhật!");
+            }
+        }
+        return ResponseEntity.badRequest().body("Không tìm thấy giỏ hàng hoặc sản phẩm!");
+    }
+
+    // Xóa sản phẩm khỏi giỏ hàng
+    @DeleteMapping("/remove/{accountId}/{bookId}")
+    public ResponseEntity<?> removeItem(@PathVariable String accountId, @PathVariable String bookId) {
+        Optional<Cart> cartOptional = cartRepository.findByAccountId(accountId);
+
+        if (cartOptional.isPresent()) {
+            Cart cart = cartOptional.get();
+            List<CartItem> cartItems = cart.getCartItems();
+            cartItems.removeIf(item -> item.getBookId().equals(bookId));
+            cartRepository.save(cart);
+            return ResponseEntity.ok("Sản phẩm đã được xóa khỏi giỏ hàng!");
+        }
+        return ResponseEntity.badRequest().body("Không tìm thấy giỏ hàng!");
     }
 }

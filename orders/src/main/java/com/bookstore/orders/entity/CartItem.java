@@ -10,11 +10,10 @@ public class CartItem {
 
     @Id
     private String id;
-
-    // Thêm trường cartId để liên kết đến giỏ hàng
     private String cartId;
-
     private String bookId;
-
+    private String bookName;
+    private String bookImage; // Thêm ảnh sách
     private int quantity;
+    private double price;
 }
