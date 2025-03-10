@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:3001")
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -17,8 +18,6 @@ public class OrderController {
     @Autowired
     private IOrderService orderService;
 
-    // Enable CORS for this specific endpoint
-    @CrossOrigin(origins = "http://localhost:3001")  // Allow requests from frontend (React app)
     @PostMapping("/create")
     public ResponseEntity<Order> createOrder(@RequestBody OrderDto orderDto) {
         Order createdOrder = orderService.createOrder(orderDto);
