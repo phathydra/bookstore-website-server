@@ -2,6 +2,7 @@ package com.bookstore.orders.dto;
 
 import lombok.Data;
 import java.util.List;
+import java.time.LocalDateTime;  // Import LocalDateTime
 
 @Data
 public class OrderDto {
@@ -17,4 +18,6 @@ public class OrderDto {
     private List<OrderItemDto> orderItems;
     private String orderStatus;
     private String shippingStatus;
+    private String paymentMethod;
+    private LocalDateTime dateOrder;  // Optional: Add this field if needed
 }
