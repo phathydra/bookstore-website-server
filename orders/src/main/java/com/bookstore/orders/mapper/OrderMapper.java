@@ -7,9 +7,11 @@ import com.bookstore.orders.entity.OrderItem;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;  // Import LocalDateTime
 
 @Component
 public class OrderMapper {
+
     public Order toEntity(OrderDto dto) {
         Order order = new Order();
         order.setAccountId(dto.getAccountId());
@@ -23,6 +25,9 @@ public class OrderMapper {
         order.setTotalPrice(dto.getTotalPrice());
         order.setOrderStatus(dto.getOrderStatus());
         order.setShippingStatus(dto.getShippingStatus());
+        order.setPaymentMethod(dto.getPaymentMethod());
+
+        order.setDateOrder(LocalDateTime.now());  // Automatically set the current date and time
 
         List<OrderItem> items = dto.getOrderItems().stream().map(this::toEntity).collect(Collectors.toList());
         order.setOrderItems(items);

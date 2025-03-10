@@ -4,6 +4,7 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
+import java.time.LocalDateTime;  // Import LocalDateTime
 
 @Data
 @Document(collection = "orders")
@@ -22,4 +23,6 @@ public class Order {
     private List<OrderItem> orderItems;
     private String orderStatus;
     private String shippingStatus;
+    private String paymentMethod;
+    private LocalDateTime dateOrder;  // Add this field for order date
 }
