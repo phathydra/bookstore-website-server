@@ -5,26 +5,21 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.List;
 
-@Document(collection = "orders")
 @Data
+@Document(collection = "orders")
 public class Order {
-
     @Id
     private String orderId;
-
     private String accountId;
-
-    private String customerName;
-
-    private String email;
-
-    private String phone;
-
-    private String address;
-
-    private String paymentMethod; // VD: "COD", "Momo", "Bank"
-
+    private String phoneNumber;
+    private String recipientName;
+    private String country;
+    private String city;
+    private String district;
+    private String ward;
+    private String note;
     private double totalPrice;
-
     private List<OrderItem> orderItems;
+    private String orderStatus;
+    private String shippingStatus;
 }
