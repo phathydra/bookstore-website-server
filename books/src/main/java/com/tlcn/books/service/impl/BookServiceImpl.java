@@ -130,5 +130,17 @@ public class BookServiceImpl implements IBookService {
                 .map(b -> BookMapper.mapToBookDto(b, new BookDto()))
                 .collect(Collectors.toList());
     }
+    @Override
+    public Page<BookDto> getBooksByMainCategory(String mainCategory, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> books = bookRepository.findByMainCategory(mainCategory, pageable);
+        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+    }
+    @Override
+    public Page<BookDto> getBooksByBookCategory(String bookCategory, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> books = bookRepository.findByBookCategory(bookCategory, pageable);
+        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+    }
 
 }

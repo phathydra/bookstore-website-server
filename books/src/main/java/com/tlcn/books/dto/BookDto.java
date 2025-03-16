@@ -21,6 +21,9 @@ public class BookDto {
     @Min(value = 0, message = "Giá sách phải lớn hơn hoặc bằng 0")
     private double bookPrice;
 
+    @NotEmpty(message = "Danh mục chính không được để trống")
+    private String mainCategory; // Thêm danh mục chính
+
     @NotEmpty(message = "Thể loại không được để trống")
     private String bookCategory;
 
@@ -44,3 +47,4 @@ public class BookDto {
     @Size(max = 500, message = "Mô tả sách không được vượt quá 500 ký tự")
     private String bookDescription;
 }
+
