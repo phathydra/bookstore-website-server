@@ -6,6 +6,9 @@ import com.bookstore.orders.mapper.OrderMapper;
 import com.bookstore.orders.repository.OrderRepository;
 import com.bookstore.orders.service.IOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,4 +38,25 @@ public class OrderServiceImpl implements IOrderService {
     public Optional<Order> getOrderById(String orderId) {
         return orderRepository.findById(orderId);  // Tìm đơn hàng theo orderId
     }
+
+    @Override
+    public Page<Order> getAllOrders(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return orderRepository.findAll(pageable);
+    }
+
+    @Override
+    public Optional<Order> updateShippingStatus(String orderId, String shippingStatus) {
+        Optional<Order> orderOptional = orderRepository.findById(orderId);
+
+        if (orderOptional.isPresent()) {
+            Order order = orderOptional.get();
+            order.setShippingStatus(shippingStatus); // Giả sử Order có trường shippingStatus
+            orderRepository.save(order);
+            return Optional.of(order);
+        }
+
+        return Optional.empty();
+    }
+
 }
