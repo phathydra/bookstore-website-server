@@ -119,4 +119,28 @@ public class BookController {
         }
     }
 
+    @GetMapping("/mainCategory/{mainCategory}")
+    public ResponseEntity<Page<BookDto>> getBooksByMainCategory(@PathVariable String mainCategory,
+                                                                @RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<BookDto> books = iBookService.getBooksByMainCategory(mainCategory, page, size);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
+        }
+    }
+
+    @GetMapping("/bookCategory/{bookCategory}")
+    public ResponseEntity<Page<BookDto>> getBooksByBookCategory(@PathVariable String bookCategory,
+                                                                @RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<BookDto> books = iBookService.getBooksByBookCategory(bookCategory, page, size);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
+        }
+    }
+
 }

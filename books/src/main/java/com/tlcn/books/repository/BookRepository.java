@@ -24,4 +24,8 @@ public interface BookRepository extends MongoRepository<Book, String> {
     List<Book> findTop5ByBookAuthorAndBookIdNot(String bookAuthor, String bookId);
 
     Collection<? extends Book> findTop3ByOrderByBookNameAsc();
+
+    Page<Book> findByMainCategory(String mainCategory, Pageable pageable);
+
+    Page<Book> findByBookCategory(String bookCategory, Pageable pageable);
 }

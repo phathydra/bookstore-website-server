@@ -25,6 +25,8 @@ public class Book{
 
     private BigDecimal bookPrice;
 
+    private String mainCategory;
+
     private String bookCategory;
 
     private int bookYearOfProduction;
@@ -41,7 +43,7 @@ public class Book{
 
     // Constructor nhận double để tránh lỗi khi nhận dữ liệu từ JSON hoặc DB
     public Book(String bookId, String bookName, String bookAuthor, String bookImage,
-                double bookPrice, String bookCategory, int bookYearOfProduction,
+                double bookPrice, String mainCategory, String bookCategory, int bookYearOfProduction,
                 String bookPublisher, String bookLanguage, int bookStockQuantity,
                 String bookSupplier, String bookDescription) {
         this.bookId = bookId;
@@ -49,6 +51,7 @@ public class Book{
         this.bookAuthor = bookAuthor;
         this.bookImage = bookImage;
         this.bookPrice = BigDecimal.valueOf(bookPrice).setScale(2, RoundingMode.HALF_UP);
+        this.mainCategory = mainCategory;
         this.bookCategory = bookCategory;
         this.bookYearOfProduction = bookYearOfProduction;
         this.bookPublisher = bookPublisher;

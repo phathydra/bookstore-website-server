@@ -26,4 +26,8 @@ public interface IBookService {
     Page<BookDto> searchBooks(int page, int size, String input);
 
     List<BookDto> getRecommendedBooks(String bookId);
+
+    Page<BookDto> getBooksByMainCategory(String mainCategory, int page, int size);
+
+    Page<BookDto> getBooksByBookCategory(String bookCategory, int page, int size);
 }
