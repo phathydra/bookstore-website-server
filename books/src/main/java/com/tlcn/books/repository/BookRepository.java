@@ -19,7 +19,7 @@ public interface BookRepository extends MongoRepository<Book, String> {
 
     Page<Book> findByBookNameContainingIgnoreCaseOrBookAuthorContainingIgnoreCase(Pageable pageable, String bookName, String bookAuthor);
 
-    List<Book> findTop5ByBookCategoryAndBookIdNot(String bookCategory, String bookId);
+    List<Book> findTop5ByMainCategoryAndBookIdNot(String mainCategory, String bookId);
 
     List<Book> findTop5ByBookAuthorAndBookIdNot(String bookAuthor, String bookId);
 
@@ -28,4 +28,29 @@ public interface BookRepository extends MongoRepository<Book, String> {
     Page<Book> findByMainCategory(String mainCategory, Pageable pageable);
 
     Page<Book> findByBookCategory(String bookCategory, Pageable pageable);
+
+    Page<Book> findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookPublisherInAndBookSupplierIn(
+            String bookAuthor, List<String> mainCategory, double minPrice, double maxPrice, List<String> bookPublisher, List<String> bookSupplier, Pageable pageable);
+
+    Page<Book> findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookPublisherIn(
+            String bookAuthor, List<String> mainCategory, double minPrice, double maxPrice, List<String> bookPublisher, Pageable pageable);
+
+    Page<Book> findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookSupplierIn(
+            String bookAuthor, List<String> mainCategory, double minPrice, double maxPrice, List<String> bookSupplier, Pageable pageable);
+
+    Page<Book> findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookPublisherInAndBookSupplierIn(
+            String bookAuthor, double minPrice, double maxPrice, List<String> bookPublisher, List<String> bookSupplier, Pageable pageable);
+
+    Page<Book> findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetween(
+            String bookAuthor, List<String> mainCategory, double minPrice, double maxPrice, Pageable pageable);
+
+    Page<Book> findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookPublisherIn(
+            String bookAuthor, double minPrice, double maxPrice, List<String> bookPublisher, Pageable pageable);
+
+    Page<Book> findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookSupplierIn(
+            String bookAuthor, double minPrice, double maxPrice, List<String> bookSupplier, Pageable pageable);
+
+    Page<Book> findByBookAuthorContainingIgnoreCaseAndBookPriceBetween(
+            String bookAuthor, double minPrice, double maxPrice, Pageable pageable);
 }
+
