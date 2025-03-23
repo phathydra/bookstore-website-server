@@ -11,7 +11,7 @@ public class BookMapper {
         bookDto.setBookName(book.getBookName());
         bookDto.setBookAuthor(book.getBookAuthor());
         bookDto.setBookImage(book.getBookImage());
-        bookDto.setBookPrice(book.getBookPrice().doubleValue());
+        bookDto.setBookPrice(book.getBookPrice());
         bookDto.setMainCategory(book.getMainCategory());
         bookDto.setBookCategory(book.getBookCategory());
         bookDto.setBookYearOfProduction(book.getBookYearOfProduction());

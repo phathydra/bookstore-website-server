@@ -30,4 +30,7 @@ public interface IBookService {
     Page<BookDto> getBooksByMainCategory(String mainCategory, int page, int size);
 
     Page<BookDto> getBooksByBookCategory(String bookCategory, int page, int size);
+
+    Page<BookDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size);
+
 }
