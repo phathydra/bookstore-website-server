@@ -44,7 +44,6 @@ public class BookDto {
     @Size(max = 100, message = "Nhà cung cấp không được vượt quá 100 ký tự")
     private String bookSupplier;
 
-    @Size(max = 500, message = "Mô tả sách không được vượt quá 500 ký tự")
     private String bookDescription;
 }
 

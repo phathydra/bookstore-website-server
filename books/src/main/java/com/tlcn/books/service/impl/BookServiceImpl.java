@@ -99,7 +99,7 @@ public class BookServiceImpl implements IBookService {
 
         Book book = optionalBook.get();
 
-        List<Book> booksByCategory = bookRepository.findTop5ByBookCategoryAndBookIdNot(book.getBookCategory(), bookId);
+        List<Book> booksByCategory = bookRepository.findTop5ByMainCategoryAndBookIdNot(book.getMainCategory(), bookId);
 
         List<Book> booksByAuthor = bookRepository.findTop5ByBookAuthorAndBookIdNot(book.getBookAuthor(), bookId);
 
@@ -116,13 +116,13 @@ public class BookServiceImpl implements IBookService {
                 recommendedBooks.add(b);
             }
         }
-        if (recommendedBooks.size() < 3) {
+        if (recommendedBooks.size() < 5) {
             List<Book> additionalBooks = (List<Book>) bookRepository.findTop3ByOrderByBookNameAsc();
             for (Book additionalBook : additionalBooks) {
                 if (!recommendedBooks.contains(additionalBook) && !additionalBook.getBookId().equals(bookId)) {
                     recommendedBooks.add(additionalBook);
                 }
-                if (recommendedBooks.size() >= 3) break;
+                if (recommendedBooks.size() >= 5) break;
             }
         }
         return recommendedBooks.stream()
@@ -130,6 +130,7 @@ public class BookServiceImpl implements IBookService {
                 .map(b -> BookMapper.mapToBookDto(b, new BookDto()))
                 .collect(Collectors.toList());
     }
+
     @Override
     public Page<BookDto> getBooksByMainCategory(String mainCategory, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -143,4 +144,40 @@ public class BookServiceImpl implements IBookService {
         return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
     }
 
+    @Override
+    public Page<BookDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        double min = (minPrice != null) ? minPrice : 0;
+        double max = (maxPrice != null) ? maxPrice : Double.MAX_VALUE;
+
+        Page<Book> books;
+
+        if (mainCategory != null && !mainCategory.isEmpty() && bookPublisher != null && !bookPublisher.isEmpty() && bookSupplier != null && !bookSupplier.isEmpty()) {
+            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookPublisherInAndBookSupplierIn(
+                    bookAuthor, mainCategory, min, max, bookPublisher, bookSupplier, pageable);
+        } else if (mainCategory != null && !mainCategory.isEmpty() && bookPublisher != null && !bookPublisher.isEmpty()) {
+            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookPublisherIn(
+                    bookAuthor, mainCategory, min, max, bookPublisher, pageable);
+        } else if (mainCategory != null && !mainCategory.isEmpty() && bookSupplier != null && !bookSupplier.isEmpty()) {
+            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookSupplierIn(
+                    bookAuthor, mainCategory, min, max, bookSupplier, pageable);
+        } else if (bookPublisher != null && !bookPublisher.isEmpty() && bookSupplier != null && !bookSupplier.isEmpty()) {
+            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookPublisherInAndBookSupplierIn(
+                    bookAuthor, min, max, bookPublisher, bookSupplier, pageable);
+        } else if (mainCategory != null && !mainCategory.isEmpty()) {
+            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetween(
+                    bookAuthor, mainCategory, min, max, pageable);
+        } else if (bookPublisher != null && !bookPublisher.isEmpty()) {
+            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookPublisherIn(
+                    bookAuthor, min, max, bookPublisher, pageable);
+        } else if (bookSupplier != null && !bookSupplier.isEmpty()) {
+            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookSupplierIn(
+                    bookAuthor, min, max, bookSupplier, pageable);
+        } else {
+            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndBookPriceBetween(
+                    bookAuthor, min, max, pageable);
+        }
+
+        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+    }
 }
