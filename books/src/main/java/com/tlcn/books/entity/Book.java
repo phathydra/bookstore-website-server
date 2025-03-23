@@ -23,7 +23,7 @@ public class Book {
 
     private String bookImage;
 
-    private double bookPrice;
+    private Double bookPrice;
 
     private String mainCategory;
 
@@ -40,5 +40,4 @@ public class Book {
     private String bookSupplier;
 
     private String bookDescription;
-
 }
