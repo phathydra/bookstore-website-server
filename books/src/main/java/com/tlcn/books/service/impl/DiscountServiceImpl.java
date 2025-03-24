@@ -18,7 +18,7 @@ import java.util.*;
 
 @Service
 @AllArgsConstructor
-public class DiscountService implements IDiscountService {
+public class DiscountServiceImpl implements IDiscountService {
 
     public final DiscountRepository discountRepository;
     public final BookDiscountRepository bookDiscountRepository;
