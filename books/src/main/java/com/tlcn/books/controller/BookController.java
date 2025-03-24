@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Collections;
 
-@CrossOrigin(origins = "http://localhost:3001")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 @RestController
 @RequestMapping(path = "/api/book", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class BookController {
@@ -110,6 +110,31 @@ public class BookController {
                     .body(Page.empty());
         }
     }
+
+    @GetMapping("/search_recommended")
+    public ResponseEntity<List<BookDto>> getSearchRecommendedBooks(@RequestParam String bookName){
+        try{
+            List<BookDto> books = iBookService.getSearchRecommendedBooks(bookName);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/discounted_books")
+    public ResponseEntity<List<BookDto>> getDiscountedBooks(@RequestParam String discountId){
+        try{
+            List<BookDto> books = iBookService.getDiscountedBooks(discountId);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
     @GetMapping("/{bookId}/recommendations")
     public ResponseEntity<List<BookDto>> getRecommendedBooks(@PathVariable String bookId) {
         try {

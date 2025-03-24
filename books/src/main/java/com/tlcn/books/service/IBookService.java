@@ -28,6 +28,10 @@ public interface IBookService {
 
     List<BookDto> getRecommendedBooks(String bookId);
 
+    List<BookDto> getSearchRecommendedBooks(String bookName);
+
+    List<BookDto> getDiscountedBooks(String discountId);
+
     Page<BookWithDiscountDto> getBooksByMainCategory(String mainCategory, int page, int size);
     Page<BookWithDiscountDto> getBooksByBookCategory(String bookCategory, int page, int size);
 
