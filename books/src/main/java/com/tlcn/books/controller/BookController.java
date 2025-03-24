@@ -144,4 +144,20 @@ public class BookController {
         }
     }
 
+    @GetMapping("/filter")
+    public ResponseEntity<Page<BookDto>> filterBooks(
+            @RequestParam(required = false, defaultValue = "") String bookAuthor,
+            @RequestParam(required = false) List<String> mainCategory,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) List<String> bookPublisher, // Thay đổi thành List<String>
+            @RequestParam(required = false) List<String> bookSupplier,  // Thay đổi thành List<String>
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<BookDto> books = iBookService.filterBooks(bookAuthor, mainCategory, minPrice, maxPrice, bookPublisher, bookSupplier, page, size);
+        return new ResponseEntity<>(books, HttpStatus.OK);
+    }
+
+
 }
