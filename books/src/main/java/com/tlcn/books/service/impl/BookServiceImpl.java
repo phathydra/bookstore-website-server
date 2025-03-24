@@ -97,12 +97,24 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public BookDto getBookById(String bookId) {
+    public BookWithDiscountDto getBookById(String bookId) {
         Optional<Book> optionalBook = bookRepository.findById(bookId);
-        if (optionalBook.isEmpty()) {
+        BookWithDiscountDto bookWithDiscount = new BookWithDiscountDto();
+        if(optionalBook.isPresent()) {
+            bookWithDiscount =
+                    BookMapper.mapToBookWithDiscountDto(optionalBook.get(), new BookWithDiscountDto());
+            Optional<BookDiscount> bookDiscount =
+                    bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
+            if (bookDiscount.isPresent()) {
+                Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
+                bookWithDiscount.setPercentage(discount.get().getPercentage());
+                double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - bookWithDiscount.getPercentage() / (double) 100));
+                bookWithDiscount.setDiscountedPrice(discountedPrice);
+            }
+        } else{
             throw new RuntimeException("Không tìm thấy sách với ID: " + bookId);
         }
-        return BookMapper.mapToBookDto(optionalBook.get(), new BookDto());
+        return bookWithDiscount;
     }
 
     @Override
