@@ -1,6 +1,7 @@
 package com.tlcn.books.mapper;
 
 import com.tlcn.books.dto.BookDto;
+import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.entity.Book;
 
 public class BookMapper {
@@ -40,5 +41,24 @@ public class BookMapper {
         book.setBookSupplier(bookDto.getBookSupplier());
         book.setBookDescription(bookDto.getBookDescription());
         return book;
+    }
+
+    public static BookWithDiscountDto mapToBookWithDiscountDto(Book book, BookWithDiscountDto bookWithDiscountDto){
+        bookWithDiscountDto.setBookId(book.getBookId());
+        bookWithDiscountDto.setBookName(book.getBookName());
+        bookWithDiscountDto.setBookAuthor(book.getBookAuthor());
+        bookWithDiscountDto.setBookImage(book.getBookImage());
+        bookWithDiscountDto.setBookPrice(book.getBookPrice());
+        bookWithDiscountDto.setMainCategory(book.getMainCategory());
+        bookWithDiscountDto.setBookCategory(book.getBookCategory());
+        bookWithDiscountDto.setBookYearOfProduction(book.getBookYearOfProduction());
+        bookWithDiscountDto.setBookPublisher(book.getBookPublisher());
+        bookWithDiscountDto.setBookLanguage(book.getBookLanguage());
+        bookWithDiscountDto.setBookStockQuantity(book.getBookStockQuantity());
+        bookWithDiscountDto.setBookSupplier(book.getBookSupplier());
+        bookWithDiscountDto.setBookDescription(book.getBookDescription());
+
+        // Trả về đối tượng BookDto đã được map
+        return bookWithDiscountDto;
     }
 }

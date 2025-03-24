@@ -24,16 +24,16 @@ public class DiscountService implements IDiscountService {
     public final BookDiscountRepository bookDiscountRepository;
 
     @Override
-    public BookDiscountDto getDiscountByBookId(int page, int size, String bookId) {
-        Pageable pageable = PageRequest.of(page, size);
-
-        return null;
-    }
-
-    @Override
-    public BookDiscountDto getDiscountByDiscountId(int page, int size, String discountId) {
-        Pageable pageable = PageRequest.of(page, size);
-        return null;
+    public BookDiscountDto getDiscountByBookIdAndDiscountId(String bookId, String discountId) {
+        Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookIdAndDiscountId(bookId, discountId);
+        if(bookDiscount.isPresent()){
+            BookDiscountDto bookDiscountDto = new BookDiscountDto();
+            bookDiscountDto.setBookId(bookDiscount.get().getBookId());
+            bookDiscountDto.setDiscountId(bookDiscount.get().getDiscountId());
+            return bookDiscountDto;
+        } else {
+            throw new RuntimeException("BookDiscount not found");
+        }
     }
 
     @Override
@@ -57,7 +57,7 @@ public class DiscountService implements IDiscountService {
         bookDiscountRepository.save(bookDiscount);
     }
 
-    @Override
+    @Override///////////////////////
     public void updateBookDiscount(String id, String newDiscountId) {
         Optional<BookDiscount> optionalBookDiscount = bookDiscountRepository.findById(id);
 
@@ -66,7 +66,7 @@ public class DiscountService implements IDiscountService {
             bookDiscount.setDiscountId(newDiscountId);
             bookDiscountRepository.save(bookDiscount);
         } else {
-            throw new RuntimeException("BookDiscount not found with id: " + id);
+            throw new RuntimeException("BookDiscount not found");
         }
     }
 
@@ -82,13 +82,8 @@ public class DiscountService implements IDiscountService {
     }
 
     @Override
-    public void deleteDiscountByBookId(String bookId) {
-        bookDiscountRepository.deleteByBookId(bookId);
-    }
-
-    @Override
-    public void deleteDiscountByDiscountId(String discountId) {
-        bookDiscountRepository.deleteByDiscountId(discountId);
+    public void deleteDiscountByBookIdAndDiscountId(String bookId, String discountId) {
+        bookDiscountRepository.deleteByBookIdAndDiscountId(bookId, discountId);
     }
 
     @Override

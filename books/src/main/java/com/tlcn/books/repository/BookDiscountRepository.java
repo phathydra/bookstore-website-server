@@ -7,14 +7,15 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookDiscountRepository extends MongoRepository<BookDiscount, String> {
-    Page<BookDiscount> findByBookId(Pageable pageable, String bookId);
+    Optional<BookDiscount> findByBookIdAndDiscountId(String bookId, String discountId);
 
-    Page<BookDiscount> findByDiscountId(Pageable pageable, String discountId);
+    Optional<BookDiscount> findByBookId(String bookId);
 
-    void deleteByBookId(String bookId);
+    List<BookDiscount> findByDiscountId(String discountId);
 
-    void deleteByDiscountId(String discountId);
+    void deleteByBookIdAndDiscountId(String bookId, String discountId);
 }

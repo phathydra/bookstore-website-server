@@ -1,12 +1,18 @@
 package com.tlcn.books.service.impl;
 
+import com.tlcn.books.dto.BookDiscountDto;
 import com.tlcn.books.dto.BookDto;
+import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.dto.SearchCriteria;
 import com.tlcn.books.entity.Book;
+import com.tlcn.books.entity.BookDiscount;
+import com.tlcn.books.entity.Discount;
 import com.tlcn.books.exception.BookAlreadyExistsException;
 import com.tlcn.books.exception.ResourceNotFoundException;
 import com.tlcn.books.mapper.BookMapper;
+import com.tlcn.books.repository.BookDiscountRepository;
 import com.tlcn.books.repository.BookRepository;
+import com.tlcn.books.repository.DiscountRepository;
 import com.tlcn.books.service.IBookService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +29,8 @@ import java.util.stream.Collectors;
 public class BookServiceImpl implements IBookService {
 
     private final BookRepository bookRepository;
+    private final BookDiscountRepository bookDiscountRepository;
+    private final DiscountRepository discountRepository;
 
     @Override
     public void createBook(BookDto bookDto) {
@@ -68,10 +76,24 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public Page<BookDto> getAllBooks(int page, int size) {
+    public Page<BookWithDiscountDto> getAllBooks(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Book> books = bookRepository.findAllBy(pageable);
-        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+        Page<BookWithDiscountDto> bookWithDiscountDto =
+                books.map(book -> {
+                    BookWithDiscountDto bookWithDiscount =
+                            BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
+                    Optional<BookDiscount> bookDiscount =
+                            bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
+                    if(bookDiscount.isPresent()){
+                        Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
+                        bookWithDiscount.setPercentage(discount.get().getPercentage());
+                        double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - bookWithDiscount.getPercentage() / (double)100));
+                        bookWithDiscount.setDiscountedPrice(discountedPrice);
+                    }
+                    return bookWithDiscount;
+                });
+        return bookWithDiscountDto;
     }
 
     @Override
@@ -84,10 +106,24 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public Page<BookDto> searchBooks(int page, int size, String input){
+    public Page<BookWithDiscountDto> searchBooks(int page, int size, String input){
         Pageable pageable = PageRequest.of(page, size);
         Page<Book> books = bookRepository.findByBookNameContainingIgnoreCaseOrBookAuthorContainingIgnoreCase(pageable, input, input);
-        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+        Page<BookWithDiscountDto> bookWithDiscountDto =
+                books.map(book -> {
+                    BookWithDiscountDto bookWithDiscount =
+                            BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
+                    Optional<BookDiscount> bookDiscount =
+                            bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
+                    if(bookDiscount.isPresent()){
+                        Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
+                        bookWithDiscount.setPercentage(discount.get().getPercentage());
+                        double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - bookWithDiscount.getPercentage() / (double)100));
+                        bookWithDiscount.setDiscountedPrice(discountedPrice);
+                    }
+                    return bookWithDiscount;
+                });
+        return bookWithDiscountDto;
     }
 
     @Override
@@ -132,20 +168,48 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public Page<BookDto> getBooksByMainCategory(String mainCategory, int page, int size) {
+    public Page<BookWithDiscountDto> getBooksByMainCategory(String mainCategory, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Book> books = bookRepository.findByMainCategory(mainCategory, pageable);
-        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+        Page<BookWithDiscountDto> bookWithDiscountDto =
+                books.map(book -> {
+                    BookWithDiscountDto bookWithDiscount =
+                            BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
+                    Optional<BookDiscount> bookDiscount =
+                            bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
+                    if(bookDiscount.isPresent()){
+                        Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
+                        bookWithDiscount.setPercentage(discount.get().getPercentage());
+                        double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - bookWithDiscount.getPercentage() / (double)100));
+                        bookWithDiscount.setDiscountedPrice(discountedPrice);
+                    }
+                    return bookWithDiscount;
+                });
+        return bookWithDiscountDto;
     }
     @Override
-    public Page<BookDto> getBooksByBookCategory(String bookCategory, int page, int size) {
+    public Page<BookWithDiscountDto> getBooksByBookCategory(String bookCategory, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Book> books = bookRepository.findByBookCategory(bookCategory, pageable);
-        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+        Page<BookWithDiscountDto> bookWithDiscountDto =
+                books.map(book -> {
+                    BookWithDiscountDto bookWithDiscount =
+                            BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
+                    Optional<BookDiscount> bookDiscount =
+                            bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
+                    if(bookDiscount.isPresent()){
+                        Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
+                        bookWithDiscount.setPercentage(discount.get().getPercentage());
+                        double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - bookWithDiscount.getPercentage() / (double)100));
+                        bookWithDiscount.setDiscountedPrice(discountedPrice);
+                    }
+                    return bookWithDiscount;
+                });
+        return bookWithDiscountDto;
     }
 
     @Override
-    public Page<BookDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size) {
+    public Page<BookWithDiscountDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         double min = (minPrice != null) ? minPrice : 0;
         double max = (maxPrice != null) ? maxPrice : Double.MAX_VALUE;
@@ -178,6 +242,20 @@ public class BookServiceImpl implements IBookService {
                     bookAuthor, min, max, pageable);
         }
 
-        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+        Page<BookWithDiscountDto> bookWithDiscountDto =
+                books.map(book -> {
+                    BookWithDiscountDto bookWithDiscount =
+                            BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
+                    Optional<BookDiscount> bookDiscount =
+                            bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
+                    if(bookDiscount.isPresent()){
+                        Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
+                        bookWithDiscount.setPercentage(discount.get().getPercentage());
+                        double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - bookWithDiscount.getPercentage() / (double)100));
+                        bookWithDiscount.setDiscountedPrice(discountedPrice);
+                    }
+                    return bookWithDiscount;
+                });
+        return bookWithDiscountDto;
     }
 }

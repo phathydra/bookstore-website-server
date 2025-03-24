@@ -6,9 +6,7 @@ import org.springframework.data.domain.Page;
 
 public interface IDiscountService {
 
-    BookDiscountDto getDiscountByBookId(int page, int size, String bookId);
-
-    BookDiscountDto getDiscountByDiscountId(int page, int size, String discountId);
+    BookDiscountDto getDiscountByBookIdAndDiscountId(String bookId, String discountId);
 
     Page<DiscountDto> getAllDiscount(int page, int size);
 
@@ -20,9 +18,7 @@ public interface IDiscountService {
 
     void updateDiscount(String id, DiscountDto discountDto);
 
-    void deleteDiscountByBookId(String bookId);
-
-    void deleteDiscountByDiscountId(String discountId);
+    void deleteDiscountByBookIdAndDiscountId(String bookId, String discountId);
 
     void deleteDiscount(String id);
 }
