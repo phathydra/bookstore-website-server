@@ -98,13 +98,13 @@ public class DiscountServiceImpl implements IDiscountService {
 
     public void createBookDiscount(BookDiscountDto bookDiscountDto) {
 
-        BookDiscount bookDiscount = new BookDiscount();
-
-        bookDiscount.setBookId(bookDiscountDto.getBookId());
-
-        bookDiscount.setDiscountId(bookDiscountDto.getDiscountId());
-
-        bookDiscountRepository.save(bookDiscount);
+        Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookIdAndDiscountId(bookDiscountDto.getBookId(), bookDiscountDto.getDiscountId());
+        if(!bookDiscount.isPresent()){
+            BookDiscount newBookDiscount= new BookDiscount();
+            newBookDiscount.setBookId(bookDiscountDto.getBookId());
+            newBookDiscount.setDiscountId(bookDiscountDto.getDiscountId());
+            bookDiscountRepository.save(newBookDiscount);
+        }
 
     }
 
