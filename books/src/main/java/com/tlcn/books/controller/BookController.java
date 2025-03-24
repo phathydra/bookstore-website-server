@@ -2,6 +2,7 @@ package com.tlcn.books.controller;
 
 import com.tlcn.books.Constants.BookConstants;
 import com.tlcn.books.dto.BookDto;
+import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.dto.ResponseDto;
 import com.tlcn.books.dto.SearchCriteria;
 import com.tlcn.books.service.IBookService;
@@ -72,10 +73,10 @@ public class BookController {
     }
 
     @GetMapping("")
-    public ResponseEntity<Page<BookDto>> getAllBooks(@RequestParam(defaultValue = "0") int page,
-                                                     @RequestParam(defaultValue = "10") int size) {
+    public ResponseEntity<Page<BookWithDiscountDto>> getAllBooks(@RequestParam(defaultValue = "0") int page,
+                                                                 @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<BookDto> books = iBookService.getAllBooks(page, size);
+            Page<BookWithDiscountDto> books = iBookService.getAllBooks(page, size);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity
@@ -97,11 +98,11 @@ public class BookController {
     }
 
     @PostMapping("/search")
-    public ResponseEntity<Page<BookDto>> searchBooks(@RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<Page<BookWithDiscountDto>> searchBooks(@RequestParam(defaultValue = "0") int page,
                                                      @RequestParam(defaultValue = "10") int size,
                                                      @RequestParam String input) {
         try {
-            Page<BookDto> books = iBookService.searchBooks(page, size, input);
+            Page<BookWithDiscountDto> books = iBookService.searchBooks(page, size, input);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity
@@ -120,11 +121,11 @@ public class BookController {
     }
 
     @GetMapping("/mainCategory/{mainCategory}")
-    public ResponseEntity<Page<BookDto>> getBooksByMainCategory(@PathVariable String mainCategory,
+    public ResponseEntity<Page<BookWithDiscountDto>> getBooksByMainCategory(@PathVariable String mainCategory,
                                                                 @RequestParam(defaultValue = "0") int page,
                                                                 @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<BookDto> books = iBookService.getBooksByMainCategory(mainCategory, page, size);
+            Page<BookWithDiscountDto> books = iBookService.getBooksByMainCategory(mainCategory, page, size);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
@@ -132,11 +133,11 @@ public class BookController {
     }
 
     @GetMapping("/bookCategory/{bookCategory}")
-    public ResponseEntity<Page<BookDto>> getBooksByBookCategory(@PathVariable String bookCategory,
+    public ResponseEntity<Page<BookWithDiscountDto>> getBooksByBookCategory(@PathVariable String bookCategory,
                                                                 @RequestParam(defaultValue = "0") int page,
                                                                 @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<BookDto> books = iBookService.getBooksByBookCategory(bookCategory, page, size);
+            Page<BookWithDiscountDto> books = iBookService.getBooksByBookCategory(bookCategory, page, size);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
