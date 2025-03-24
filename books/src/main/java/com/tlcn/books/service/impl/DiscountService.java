@@ -90,4 +90,49 @@ public class DiscountService implements IDiscountService {
     public void deleteDiscount(String id) {
         discountRepository.deleteById(id);
     }
+
+    @Override
+
+    public void createBookDiscount(BookDiscountDto bookDiscountDto) {
+
+        BookDiscount bookDiscount = new BookDiscount();
+
+        bookDiscount.setBookId(bookDiscountDto.getBookId());
+
+        bookDiscount.setDiscountId(bookDiscountDto.getDiscountId());
+
+        bookDiscountRepository.save(bookDiscount);
+
+    }
+
+    @Override
+    public List<BookDiscountDto> getAllBookDiscounts() {
+        List<BookDiscount> bookDiscounts = bookDiscountRepository.findAll();
+        List<BookDiscountDto> bookDiscountDtos = new ArrayList<>();
+
+        for (BookDiscount bookDiscount : bookDiscounts) {
+            BookDiscountDto dto = new BookDiscountDto();
+            dto.setBookId(bookDiscount.getBookId());
+            dto.setDiscountId(bookDiscount.getDiscountId());
+            bookDiscountDtos.add(dto);
+        }
+
+        return bookDiscountDtos;
+    }
+
+
+    @Override
+    public List<BookDiscountDto> getBookDiscountsByDiscountId(String discountId) {
+        List<BookDiscount> bookDiscounts = bookDiscountRepository.findByDiscountId(discountId);
+        List<BookDiscountDto> bookDiscountDtos = new ArrayList<>();
+
+        for (BookDiscount bookDiscount : bookDiscounts) {
+            BookDiscountDto dto = new BookDiscountDto();
+            dto.setBookId(bookDiscount.getBookId());
+            dto.setDiscountId(bookDiscount.getDiscountId());
+            bookDiscountDtos.add(dto);
+        }
+        return bookDiscountDtos;
+    }
+
 }

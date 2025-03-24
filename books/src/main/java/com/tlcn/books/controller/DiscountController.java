@@ -1,6 +1,7 @@
 package com.tlcn.books.controller;
 
 import com.tlcn.books.Constants.BookConstants;
+import com.tlcn.books.dto.BookDiscountDto;
 import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.DiscountDto;
 import com.tlcn.books.dto.ResponseDto;
@@ -13,12 +14,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
+import java.util.List;
+
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController()
 @RequestMapping("/api/discounts")
 public class DiscountController {
     @Autowired
     private IDiscountService iDiscountService;
+
 
     @GetMapping("")
     public ResponseEntity<Page<DiscountDto>> getAllDiscount(@RequestParam(defaultValue = "0") int page,
@@ -74,4 +79,44 @@ public class DiscountController {
                     .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi xóa giảm giá: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/createBookDiscount")
+    public ResponseEntity<ResponseDto> createBookDiscount(@Valid @RequestBody BookDiscountDto bookDiscountDto) {
+        try {
+            iDiscountService.createBookDiscount(bookDiscountDto);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(new ResponseDto(BookConstants.STATUS_201, BookConstants.MESSAGE_201));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi máy chủ nội bộ: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/book-discounts")
+    public ResponseEntity<List<BookDiscountDto>> getAllBookDiscounts() {
+        try {
+            List<BookDiscountDto> bookDiscounts = iDiscountService.getAllBookDiscounts();
+            return ResponseEntity.ok(bookDiscounts);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
+
+    @GetMapping("/book-discounts/{discountId}")
+    public ResponseEntity<List<BookDiscountDto>> getBookDiscountsByDiscountId(@PathVariable String discountId) {
+        try {
+            List<BookDiscountDto> bookDiscounts = iDiscountService.getBookDiscountsByDiscountId(discountId);
+            return ResponseEntity.ok(bookDiscounts);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
 }

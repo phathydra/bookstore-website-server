@@ -4,6 +4,8 @@ import com.tlcn.books.dto.BookDiscountDto;
 import com.tlcn.books.dto.DiscountDto;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
+
 public interface IDiscountService {
 
     BookDiscountDto getDiscountByBookIdAndDiscountId(String bookId, String discountId);
@@ -21,4 +23,10 @@ public interface IDiscountService {
     void deleteDiscountByBookIdAndDiscountId(String bookId, String discountId);
 
     void deleteDiscount(String id);
+
+    void createBookDiscount(BookDiscountDto bookDiscountDto);
+
+    List<BookDiscountDto> getBookDiscountsByDiscountId(String discountId);
+
+    List<BookDiscountDto> getAllBookDiscounts();
 }
