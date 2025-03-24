@@ -51,10 +51,13 @@ public class DiscountServiceImpl implements IDiscountService {
 
     @Override
     public void addDiscountToBook(String bookId, String disCountId) {
-        BookDiscount bookDiscount= new BookDiscount();
-        bookDiscount.setBookId(bookId);
-        bookDiscount.setDiscountId(disCountId);
-        bookDiscountRepository.save(bookDiscount);
+        Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookIdAndDiscountId(bookId, disCountId);
+        if(!bookDiscount.isPresent()){
+            BookDiscount newBookDiscount= new BookDiscount();
+            newBookDiscount.setBookId(bookId);
+            newBookDiscount.setDiscountId(disCountId);
+            bookDiscountRepository.save(newBookDiscount);
+        }
     }
 
     @Override///////////////////////
