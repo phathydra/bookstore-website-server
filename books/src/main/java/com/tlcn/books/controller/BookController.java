@@ -145,7 +145,7 @@ public class BookController {
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<Page<BookDto>> filterBooks(
+    public ResponseEntity<Page<BookWithDiscountDto>> filterBooks(
             @RequestParam(required = false, defaultValue = "") String bookAuthor,
             @RequestParam(required = false) List<String> mainCategory,
             @RequestParam(required = false) Double minPrice,
@@ -155,7 +155,7 @@ public class BookController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<BookDto> books = iBookService.filterBooks(bookAuthor, mainCategory, minPrice, maxPrice, bookPublisher, bookSupplier, page, size);
+        Page<BookWithDiscountDto> books = iBookService.filterBooks(bookAuthor, mainCategory, minPrice, maxPrice, bookPublisher, bookSupplier, page, size);
         return new ResponseEntity<>(books, HttpStatus.OK);
     }
 

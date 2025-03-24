@@ -209,7 +209,7 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public Page<BookDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size) {
+    public Page<BookWithDiscountDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         double min = (minPrice != null) ? minPrice : 0;
         double max = (maxPrice != null) ? maxPrice : Double.MAX_VALUE;
@@ -242,6 +242,20 @@ public class BookServiceImpl implements IBookService {
                     bookAuthor, min, max, pageable);
         }
 
-        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
+        Page<BookWithDiscountDto> bookWithDiscountDto =
+                books.map(book -> {
+                    BookWithDiscountDto bookWithDiscount =
+                            BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
+                    Optional<BookDiscount> bookDiscount =
+                            bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
+                    if(bookDiscount.isPresent()){
+                        Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
+                        bookWithDiscount.setPercentage(discount.get().getPercentage());
+                        double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - bookWithDiscount.getPercentage() / (double)100));
+                        bookWithDiscount.setDiscountedPrice(discountedPrice);
+                    }
+                    return bookWithDiscount;
+                });
+        return bookWithDiscountDto;
     }
 }
