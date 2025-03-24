@@ -22,7 +22,7 @@ public interface IBookService {
 
     Page<BookWithDiscountDto> getAllBooks(int page, int size);
 
-    BookDto getBookById(String bookId);
+    BookWithDiscountDto getBookById(String bookId);
 
     Page<BookWithDiscountDto> searchBooks(int page, int size, String input);
 

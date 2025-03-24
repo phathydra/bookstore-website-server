@@ -86,9 +86,9 @@ public class BookController {
     }
 
     @GetMapping("/{bookId}")
-    public ResponseEntity<BookDto> getBookById(@PathVariable String bookId) {
+    public ResponseEntity<BookWithDiscountDto> getBookById(@PathVariable String bookId) {
         try {
-            BookDto bookDto = iBookService.getBookById(bookId);
+            BookWithDiscountDto bookDto = iBookService.getBookById(bookId);
             return ResponseEntity.ok(bookDto);
         } catch (Exception e) {
             return ResponseEntity
