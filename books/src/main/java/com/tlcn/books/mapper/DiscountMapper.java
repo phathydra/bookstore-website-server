@@ -5,6 +5,7 @@ import com.tlcn.books.entity.Discount;
 
 public class DiscountMapper {
     public static DiscountDto mapToDiscountDto(Discount discount, DiscountDto discountDto){
+        discountDto.setId(discount.getId()); // mapping discountId
         discountDto.setPercentage(discount.getPercentage());
         discountDto.setStartDate(discount.getStartDate());
         discountDto.setEndDate(discount.getEndDate());

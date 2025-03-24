@@ -6,7 +6,7 @@ import java.util.Date;
 
 @Data
 public class DiscountDto {
-
+    String id;
     int percentage;
 
     Date startDate;
