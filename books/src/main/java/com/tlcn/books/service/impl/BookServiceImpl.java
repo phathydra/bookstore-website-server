@@ -180,8 +180,8 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public List<BookDto> getSearchRecommendedBooks(String bookName){
-        List<Book> bookList = bookRepository.findTop3ByBookNameContainingIgnoreCase(bookName);
+    public List<BookDto> getSearchRecommendedBooks(String bookName, List<String> excludedBooks){
+        List<Book> bookList = bookRepository.findTop3ByBookNameContainingIgnoreCaseAndBookIdNotIn(bookName, excludedBooks);
         return bookList.stream().map(book -> BookMapper.mapToBookDto(book, new BookDto())).toList();
     }
 
