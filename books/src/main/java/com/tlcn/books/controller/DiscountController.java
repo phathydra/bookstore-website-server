@@ -50,7 +50,7 @@ public class DiscountController {
         }
     }
 
-    @PostMapping("{id}")
+    @PutMapping("{id}")
     public ResponseEntity<ResponseDto> updateDiscount(@PathVariable String id, @Valid @RequestBody DiscountDto discountDto){
         try {
             iDiscountService.updateDiscount(id, discountDto);
@@ -78,10 +78,10 @@ public class DiscountController {
         }
     }
 
-    @PostMapping("/createBookDiscount")
-    public ResponseEntity<ResponseDto> createBookDiscount(@Valid @RequestBody BookDiscountDto bookDiscountDto) {
+    @PutMapping("/addDiscountToBooks")
+    public ResponseEntity<ResponseDto> addDiscountToBooks(@Valid @RequestBody List<String> bookIds, @RequestParam String discountId) {
         try {
-            iDiscountService.createBookDiscount(bookDiscountDto);
+            iDiscountService.addDiscountToBooks(bookIds, discountId);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(new ResponseDto(BookConstants.STATUS_201, BookConstants.MESSAGE_201));
