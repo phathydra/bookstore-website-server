@@ -14,7 +14,7 @@ public interface IDiscountService {
 
     void createDiscount(DiscountDto discountDto);
 
-    void addDiscountToBook(String bookId, String disCountId);
+    void addDiscountToBooks(List<String> bookIds, String disCountId);
 
     void updateBookDiscount(String id, String newDiscountId);
 

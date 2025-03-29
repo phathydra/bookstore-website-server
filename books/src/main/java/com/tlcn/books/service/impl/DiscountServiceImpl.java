@@ -50,13 +50,22 @@ public class DiscountServiceImpl implements IDiscountService {
     }
 
     @Override
-    public void addDiscountToBook(String bookId, String disCountId) {
-        Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookIdAndDiscountId(bookId, disCountId);
-        if(!bookDiscount.isPresent()){
-            BookDiscount newBookDiscount= new BookDiscount();
-            newBookDiscount.setBookId(bookId);
-            newBookDiscount.setDiscountId(disCountId);
-            bookDiscountRepository.save(newBookDiscount);
+    public void addDiscountToBooks(List<String> bookIds, String discountId) {
+        List<BookDiscount> existBookDiscounts = bookDiscountRepository.findByDiscountId(discountId);
+        for(BookDiscount bookDiscount : existBookDiscounts){
+            if(!bookIds.contains(bookDiscount.getBookId())){
+                bookDiscountRepository.deleteByBookIdAndDiscountId(bookDiscount.getBookId(), discountId);
+            }
+        }
+
+        for(String id : bookIds){
+            Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookId(id);
+            if(bookDiscount.isEmpty()){
+                BookDiscount newBookDiscount = new BookDiscount();
+                newBookDiscount.setBookId(id);
+                newBookDiscount.setDiscountId(discountId);
+                bookDiscountRepository.save(newBookDiscount);
+            }
         }
     }
 
