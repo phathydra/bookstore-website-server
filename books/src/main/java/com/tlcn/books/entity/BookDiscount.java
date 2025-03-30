@@ -12,8 +12,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 public class BookDiscount {
     @Id
-    String id;
+    private String id;
 
-    String bookId;
-    String discountId;
+    private String bookId;
+    private String discountId;
 }

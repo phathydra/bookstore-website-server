@@ -15,10 +15,10 @@ import java.util.Date;
 public class Discount {
 
     @Id
-    String id;
+    private String id;
 
-    int percentage;
+    private int percentage;
 
-    Date startDate;
-    Date endDate;
+    private Date startDate;
+    private Date endDate;
 }
