@@ -11,6 +11,7 @@ import com.bookstore.accounts.service.IAccountService;
 import lombok.AllArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,7 @@ public class AccountController {
     @Autowired
     private AccountRepository accountRepository;
     private IAccountService iAccountService;
+    private final IAccountService accountService;
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody AccountDto accountDto) {
@@ -99,15 +101,27 @@ public class AccountController {
     }
 
     @GetMapping("/allAccount")
-    public ResponseEntity<List<AccountDto>> fetchAllAccounts() {
-        List<AccountDto> accounts = iAccountService.getAllAccounts();
-        return ResponseEntity.status(HttpStatus.OK).body(accounts);
+    public ResponseEntity<Page<AccountDto>> fetchAllAccounts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<AccountDto> accounts = iAccountService.getAllAccounts(page, size);
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
+        }
     }
 
     @GetMapping("/allInformation")
-    public ResponseEntity<List<InformationDto>> fetchAllInformation() {
-        List<InformationDto> informationList = iAccountService.getAllInformation();
-        return ResponseEntity.status(HttpStatus.OK).body(informationList);
+    public ResponseEntity<Page<InformationDto>> fetchAllInformation(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<InformationDto> informationList = iAccountService.getAllInformation(page, size);
+            return ResponseEntity.ok(informationList);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
+        }
     }
 
     @PutMapping("/update-account")
@@ -124,4 +138,30 @@ public class AccountController {
         }
     }
 
+    @PostMapping("/account_search")
+    public ResponseEntity<Page<AccountDto>> searchAccounts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam String input) {
+        try {
+            Page<AccountDto> accounts = accountService.searchAccounts(page, size, input); // ✅ Gọi từ instance
+            return ResponseEntity.ok(accounts);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
+    @PostMapping("/information_search")
+    public ResponseEntity<Page<InformationDto>> searchInformation(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam String input) {
+        try {
+            Page<InformationDto> informationDtoPage = accountService.searchInformation(page, size, input);
+            return ResponseEntity.ok(informationDtoPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
+        }
+    }
 }

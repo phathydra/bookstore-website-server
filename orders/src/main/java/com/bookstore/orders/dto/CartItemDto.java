@@ -17,11 +17,14 @@ public class CartItemDto {
     private String bookName;
 
     @NotEmpty(message = "Hình ảnh sách không được để trống")
-    private String bookImage; // Thêm ảnh sách
+    private String bookImage;
 
     @Min(value = 1, message = "Số lượng phải lớn hơn hoặc bằng 1")
     private int quantity;
 
     @Min(value = 0, message = "Giá sách không được nhỏ hơn 0")
     private double price;
+
+    private Double discountedPrice; // Thêm discountedPrice
+    private Integer percentage;      // Thêm percentage
 }

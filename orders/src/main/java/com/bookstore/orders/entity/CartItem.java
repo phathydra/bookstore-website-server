@@ -13,7 +13,9 @@ public class CartItem {
     private String cartId;
     private String bookId;
     private String bookName;
-    private String bookImage; // Thêm ảnh sách
+    private String bookImage;
     private int quantity;
     private double price;
+    private Double discountedPrice; // Thêm discountedPrice
+    private Integer percentage;      // Thêm percentage
 }

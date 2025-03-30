@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -81,19 +84,17 @@ public class AccountServiceImpl implements IAccountService {
 
 
     @Override
-    public List<AccountDto> getAllAccounts() {
-        List<Account> accounts = accountRepository.findAll();
-        return accounts.stream()
-                .map(account -> AccountMapper.mapToAccountDto(account, new AccountDto()))
-                .collect(Collectors.toList());
+    public Page<AccountDto> getAllAccounts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Account> accounts = accountRepository.findAll(pageable);
+        return accounts.map(account -> AccountMapper.mapToAccountDto(account, new AccountDto()));
     }
 
     @Override
-    public List<InformationDto> getAllInformation() {
-        List<Information> informationList = informationRepository.findAll();
-        return informationList.stream()
-                .map(info -> InformationMapper.mapToInformationDto(info, new InformationDto()))
-                .collect(Collectors.toList());
+    public Page<InformationDto> getAllInformation(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Information> informationList = informationRepository.findAll(pageable);
+        return informationList.map(info -> InformationMapper.mapToInformationDto(info, new InformationDto()));
     }
 
     @Override
@@ -116,4 +117,23 @@ public class AccountServiceImpl implements IAccountService {
         return account.isPresent() && "Admin".equals(account.get().getRole());
     }
 
+    @Override
+    public Page<AccountDto> searchAccounts(int page, int size, String input) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Account> accounts = accountRepository.searchAccounts(input, pageable);
+        return accounts.map(account -> {
+            AccountDto accountDto = new AccountDto();
+            accountDto.setAccountId(account.getAccountId());
+            accountDto.setUsername(account.getUsername());
+            accountDto.setRole(account.getRole());
+            return accountDto;
+        });
+    }
+
+    @Override
+    public Page<InformationDto> searchInformation(int page, int size, String input) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Information> informationPage = informationRepository.searchInformation(input, pageable);
+        return informationPage.map(information -> InformationMapper.mapToInformationDto(information, new InformationDto()));
+    }
 }

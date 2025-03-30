@@ -2,6 +2,7 @@ package com.bookstore.accounts.service;
 
 import com.bookstore.accounts.dto.AccountDto;
 import com.bookstore.accounts.dto.InformationDto;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -14,11 +15,15 @@ public interface IAccountService {
 
     boolean deleteAccount(String accountId);
 
-    List<AccountDto> getAllAccounts();
+    Page<AccountDto> getAllAccounts(int page, int size);
 
-    List<InformationDto> getAllInformation();
+    Page<InformationDto> getAllInformation(int page, int size);
 
     boolean updateAccount(String accountId, AccountDto accountDto);
 
     boolean checkAdminRole(String username, String password);
+
+    Page<AccountDto> searchAccounts(int page, int size, String input);
+
+    Page<InformationDto> searchInformation(int page, int size, String input);
 }
