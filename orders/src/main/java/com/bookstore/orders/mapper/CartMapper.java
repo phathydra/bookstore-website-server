@@ -38,7 +38,9 @@ public class CartMapper {
                 cartItem.getBookName(),
                 cartItem.getBookImage(),
                 cartItem.getQuantity(),
-                cartItem.getPrice()
+                cartItem.getPrice(),
+                cartItem.getDiscountedPrice(), // Thêm discountedPrice
+                cartItem.getPercentage()      // Thêm percentage
         );
     }
 
@@ -49,6 +51,8 @@ public class CartMapper {
         cartItem.setBookImage(cartItemDto.getBookImage());
         cartItem.setQuantity(cartItemDto.getQuantity());
         cartItem.setPrice(cartItemDto.getPrice());
+        cartItem.setDiscountedPrice(cartItemDto.getDiscountedPrice()); // Thêm discountedPrice
+        cartItem.setPercentage(cartItemDto.getPercentage());      // Thêm percentage
         return cartItem;
     }
 }
