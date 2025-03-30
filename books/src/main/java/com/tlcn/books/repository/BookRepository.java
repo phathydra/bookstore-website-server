@@ -25,7 +25,7 @@ public interface BookRepository extends MongoRepository<Book, String> {
 
     Collection<? extends Book> findTop3ByOrderByBookNameAsc();
 
-    List<Book> findTop3ByBookNameContainingIgnoreCase(String bookName);
+    List<Book> findTop3ByBookNameContainingIgnoreCaseAndBookIdNotIn(String bookName, List<String> excludedBooks);
 
     Page<Book> findByMainCategory(String mainCategory, Pageable pageable);
 

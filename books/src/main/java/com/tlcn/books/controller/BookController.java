@@ -1,5 +1,6 @@
 package com.tlcn.books.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tlcn.books.Constants.BookConstants;
 import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
@@ -111,10 +112,10 @@ public class BookController {
         }
     }
 
-    @GetMapping("/search_recommended")
-    public ResponseEntity<List<BookDto>> getSearchRecommendedBooks(@RequestParam String bookName){
+    @PostMapping("/search_recommended")
+    public ResponseEntity<List<BookDto>> getSearchRecommendedBooks(@RequestParam String bookName, @RequestBody List<String> excludedBooks){
         try{
-            List<BookDto> books = iBookService.getSearchRecommendedBooks(bookName);
+            List<BookDto> books = iBookService.getSearchRecommendedBooks(bookName, excludedBooks);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity
