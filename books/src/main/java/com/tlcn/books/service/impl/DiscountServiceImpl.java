@@ -86,8 +86,8 @@ public class DiscountServiceImpl implements IDiscountService {
     public void updateDiscount(String id, DiscountDto discountDto){
         Optional<Discount> oldDiscount = discountRepository.findById(id);
         if(oldDiscount.isPresent()){
-            Discount newDiscount = DiscountMapper.mapToDiscount(discountDto, oldDiscount.get());
-            discountRepository.save(newDiscount);
+            Discount updatedDiscount = DiscountMapper.mapToDiscount(discountDto, oldDiscount.get());
+            discountRepository.save(updatedDiscount);
         } else {
             throw new RuntimeException("Discount not found with id: " + id);
         }

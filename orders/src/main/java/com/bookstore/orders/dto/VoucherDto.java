@@ -6,6 +6,9 @@ import java.util.Date;
 
 @Data
 public class VoucherDto {
+
+    private String id;
+
     private String code;
 
     private String voucherType;
