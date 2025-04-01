@@ -1,8 +1,11 @@
 package com.bookstore.orders.service.impl;
 
+import com.bookstore.orders.dto.OrderVoucherDto;
 import com.bookstore.orders.dto.VoucherDto;
+import com.bookstore.orders.entity.OrderVoucher;
 import com.bookstore.orders.entity.Voucher;
 import com.bookstore.orders.mapper.VoucherMapper;
+import com.bookstore.orders.repository.OrderVoucherRepository;
 import com.bookstore.orders.repository.VoucherRepository;
 import com.bookstore.orders.service.IVoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +21,9 @@ public class VoucherServiceImpl implements IVoucherService {
     @Autowired
     VoucherRepository voucherRepository;
 
+    @Autowired
+    OrderVoucherRepository orderVoucherRepository;
+
     @Override
     public Page<VoucherDto> getAllVoucher(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -28,7 +34,7 @@ public class VoucherServiceImpl implements IVoucherService {
     @Override
     public VoucherDto getVoucherByCode(String code) {
         Optional<Voucher> voucher = voucherRepository.getVoucherByCode(code);
-        if(voucher.isEmpty()){
+        if(voucher.isPresent()){
             return VoucherMapper.toVoucherDto(voucher.get(), new VoucherDto());
         } else{
             throw new RuntimeException("Voucher not found with code: " + code);
@@ -40,6 +46,14 @@ public class VoucherServiceImpl implements IVoucherService {
         Voucher voucher = VoucherMapper.toVoucher(voucherDto, new Voucher());
         return VoucherMapper.toVoucherDto(voucherRepository.save(voucher), new VoucherDto());
     }
+
+    @Override
+    public OrderVoucherDto applyVoucher(OrderVoucherDto orderVoucherDto) {
+        OrderVoucher orderVoucher = VoucherMapper.toOrderVoucher(orderVoucherDto, new OrderVoucher());
+        orderVoucherRepository.save(orderVoucher);
+        return orderVoucherDto;
+    }
+
 
     @Override
     public VoucherDto updateVoucher(String id, VoucherDto voucherDto) {
