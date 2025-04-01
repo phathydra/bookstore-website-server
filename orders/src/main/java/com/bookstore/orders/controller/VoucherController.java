@@ -1,5 +1,6 @@
 package com.bookstore.orders.controller;
 
+import com.bookstore.orders.dto.OrderVoucherDto;
 import com.bookstore.orders.dto.ResponseDto;
 import com.bookstore.orders.dto.VoucherDto;
 import com.bookstore.orders.service.IVoucherService;
@@ -9,7 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "http://localhost:3001, http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3001, http://localhost:3000", allowCredentials = "true")
 @RestController
 @RequestMapping("/api/vouchers")
 public class VoucherController {
@@ -22,6 +23,18 @@ public class VoucherController {
                                                           @RequestParam(defaultValue = "10") int size){
         Page<VoucherDto> voucherDtos = iVoucherService.getAllVoucher(page, size);
         return ResponseEntity.ok(voucherDtos);
+    }
+
+    @GetMapping("/get-voucher")
+    public ResponseEntity<VoucherDto> getVoucherByCode(@RequestParam String code){
+        VoucherDto voucherDto = iVoucherService.getVoucherByCode(code);
+        return ResponseEntity.ok(voucherDto);
+    }
+
+    @PostMapping("/apply-voucher")
+    public ResponseEntity<OrderVoucherDto> applyVoucher(@RequestBody OrderVoucherDto orderVoucherDto){
+        OrderVoucherDto orderVoucherDto1 = iVoucherService.applyVoucher(orderVoucherDto);
+        return ResponseEntity.ok(orderVoucherDto1);
     }
 
     @PostMapping("")

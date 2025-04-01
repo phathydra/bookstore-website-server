@@ -1,17 +1,20 @@
 package com.bookstore.orders.service;
 
+import com.bookstore.orders.dto.OrderVoucherDto;
 import com.bookstore.orders.dto.VoucherDto;
 import com.bookstore.orders.entity.Voucher;
 import org.springframework.data.domain.Page;
 
 public interface IVoucherService {
-    public Page<VoucherDto> getAllVoucher(int page, int size);
+    Page<VoucherDto> getAllVoucher(int page, int size);
 
-    public VoucherDto getVoucherByCode(String code);
+    VoucherDto getVoucherByCode(String code);
 
-    public VoucherDto createVoucher(VoucherDto voucherDto);
+    VoucherDto createVoucher(VoucherDto voucherDto);
 
-    public VoucherDto updateVoucher(String id, VoucherDto voucherDto);
+    OrderVoucherDto applyVoucher(OrderVoucherDto orderVoucherDto);
 
-    public void delete(String voucherId);
+    VoucherDto updateVoucher(String id, VoucherDto voucherDto);
+
+    void delete(String voucherId);
 }
