@@ -120,7 +120,9 @@ public class BookServiceImpl implements IBookService {
     @Override
     public Page<BookWithDiscountDto> searchBooks(int page, int size, String input){
         Pageable pageable = PageRequest.of(page, size);
-        Page<Book> books = bookRepository.findByBookNameContainingIgnoreCaseOrBookAuthorContainingIgnoreCase(pageable, input, input);
+        String[] terms = input.trim().split("\\s+");
+        String regex = "(?i)(" + String.join("|", terms) + ")";
+        Page<Book> books = bookRepository.findBySearchTerms(regex, pageable);
         Page<BookWithDiscountDto> bookWithDiscountDto =
                 books.map(book -> {
                     BookWithDiscountDto bookWithDiscount =

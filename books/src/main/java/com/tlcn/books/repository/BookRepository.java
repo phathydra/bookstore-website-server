@@ -5,6 +5,7 @@ import com.tlcn.books.entity.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -17,7 +18,11 @@ public interface BookRepository extends MongoRepository<Book, String> {
 
     Page<Book> findAllBy(Pageable pageable);
 
-    Page<Book> findByBookNameContainingIgnoreCaseOrBookAuthorContainingIgnoreCase(Pageable pageable, String bookName, String bookAuthor);
+    @Query("{$or: [ " +
+            "{ 'bookName': { $regex: ?0, $options: 'i' } }, " +
+            "{ 'bookAuthor': { $regex: ?0, $options: 'i' } }, " +
+            "]}")
+    Page<Book> findBySearchTerms(String regex, Pageable pageable);
 
     List<Book> findTop5ByMainCategoryAndBookIdNot(String mainCategory, String bookId);
 
