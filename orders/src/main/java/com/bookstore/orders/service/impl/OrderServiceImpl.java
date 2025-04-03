@@ -31,7 +31,7 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public List<Order> getOrdersByAccountId(String accountId) {
-        return orderRepository.findByAccountId(accountId);  // Fetch orders by accountId
+        return orderRepository.findByAccountIdOrderByDateOrderDesc(accountId);  // Fetch orders by accountId
     }
 
     @Override
