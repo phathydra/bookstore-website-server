@@ -6,6 +6,7 @@ import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.dto.ResponseDto;
 import com.tlcn.books.dto.SearchCriteria;
+import com.tlcn.books.exception.ResourceNotFoundException;
 import com.tlcn.books.service.IBookService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -185,5 +186,36 @@ public class BookController {
         return new ResponseEntity<>(books, HttpStatus.OK);
     }
 
+    @PutMapping("/{bookId}/decrease-stock")
+    public ResponseEntity<ResponseDto> decreaseStock(@PathVariable String bookId, @RequestBody DecreaseStockRequest request) {
+        try {
+            iBookService.decreaseStock(bookId, request.getQuantity());
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseDto(BookConstants.STATUS_200, "Đã giảm số lượng sách"));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseDto(BookConstants.STATUS_404, e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseDto(BookConstants.STATUS_400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi khi giảm số lượng sách: " + e.getMessage()));
+        }
+    }
+    public static class DecreaseStockRequest {
+        private int quantity;
 
+        public int getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(int quantity) {
+            this.quantity = quantity;
+        }
+    }
 }

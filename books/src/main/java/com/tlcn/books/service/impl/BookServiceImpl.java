@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -286,5 +287,25 @@ public class BookServiceImpl implements IBookService {
                     return bookWithDiscount;
                 });
         return bookWithDiscountDto;
+    }
+
+    @Override
+    @Transactional
+    public void decreaseStock(String bookId, int quantity) {
+        Optional<Book> optionalBook = bookRepository.findById(bookId);
+        if (optionalBook.isEmpty()) {
+            throw new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId);
+        }
+
+        Book book = optionalBook.get();
+        int currentStock = book.getBookStockQuantity();
+        int newStock = currentStock - quantity;
+
+        if (newStock < 0) {
+            throw new IllegalArgumentException("Không đủ số lượng sách cho ID: " + bookId + ". Hiện có: " + currentStock);
+        }
+
+        book.setBookStockQuantity(newStock);
+        bookRepository.save(book);
     }
 }
