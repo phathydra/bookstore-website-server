@@ -1,6 +1,9 @@
 package com.tlcn.books.Constants;
 
 public class BookConstants {
+    public static final String STATUS_404 = "404";
+    public static final String STATUS_400 = "400";
+
     private BookConstants() {
 
     }
