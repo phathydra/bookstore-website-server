@@ -38,4 +38,6 @@ public interface IBookService {
     Page<BookWithDiscountDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size);
 
     void decreaseStock(String bookId, int quantity);
+
+    void increaseStock(String bookId, int quantity);
 }

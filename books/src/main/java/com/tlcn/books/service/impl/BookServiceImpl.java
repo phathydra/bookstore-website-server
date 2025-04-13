@@ -308,4 +308,20 @@ public class BookServiceImpl implements IBookService {
         book.setBookStockQuantity(newStock);
         bookRepository.save(book);
     }
+
+    @Override
+    @Transactional
+    public void increaseStock(String bookId, int quantity) {
+        Optional<Book> optionalBook = bookRepository.findById(bookId);
+        if (optionalBook.isEmpty()) {
+            throw new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId);
+        }
+
+        Book book = optionalBook.get();
+        int currentStock = book.getBookStockQuantity();
+        int newStock = currentStock + quantity;
+
+        book.setBookStockQuantity(newStock);
+        bookRepository.save(book);
+    }
 }
