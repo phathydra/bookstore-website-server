@@ -207,7 +207,37 @@ public class BookController {
                     .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi khi giảm số lượng sách: " + e.getMessage()));
         }
     }
+    @PutMapping("/{bookId}/increase-stock")
+    public ResponseEntity<ResponseDto> increaseStock(@PathVariable String bookId, @RequestBody IncreaseStockRequest request) {
+        try {
+            iBookService.increaseStock(bookId, request.getQuantity());
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseDto(BookConstants.STATUS_200, "Đã tăng số lượng sách"));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseDto(BookConstants.STATUS_404, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi khi tăng số lượng sách: " + e.getMessage()));
+        }
+    }
+
     public static class DecreaseStockRequest {
+        private int quantity;
+
+        public int getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(int quantity) {
+            this.quantity = quantity;
+        }
+    }
+
+    public static class IncreaseStockRequest {
         private int quantity;
 
         public int getQuantity() {
