@@ -1,15 +1,37 @@
 package com.bookstore.chatbot.entity;
 
-public class Book {
-    private String title;
-    private String author;
-    private String genre;
+import lombok.*;
 
-    // Getters and setters
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public String getAuthor() { return author; }
-    public void setAuthor(String author) { this.author = author; }
-    public String getGenre() { return genre; }
-    public void setGenre(String genre) { this.genre = genre; }
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
+public class Book {
+
+    private String bookId;
+
+    private String bookName;
+
+    private String bookAuthor;
+
+    private String bookImage;
+
+    private Double bookPrice;
+
+    private String mainCategory;
+
+    private String bookCategory;
+
+    private int bookYearOfProduction;
+
+    private String bookPublisher;
+
+    private String bookLanguage;
+
+    private int bookStockQuantity;
+
+    private String bookSupplier;
+
+    private String bookDescription;
 }
