@@ -7,7 +7,3 @@ spring:
       uri: mongodb+srv://toanphat124:0984029574Phat%21@cluster0.jmrvw.mongodb.net/BookStore
   main:
     allow-bean-definition-overriding: true
-  ai:
-    openai:
-      api-key: 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
-      base-url: https://openrouter.ai/api/v1
