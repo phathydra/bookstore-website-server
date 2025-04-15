@@ -14,7 +14,7 @@ import org.springframework.web.client.RestTemplate;
 @Service
 public class ChatbotService {
     private static final String API_URL = "https://openrouter.ai/api/v1/chat/completions";
-    private static final String API_KEY = "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";
+    private static final String API_KEY = "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";
 
     // Dependencies
     private final RestTemplate restTemplate = new RestTemplate();
