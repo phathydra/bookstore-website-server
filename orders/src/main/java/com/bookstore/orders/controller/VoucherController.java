@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @CrossOrigin(origins = "http://localhost:3001, http://localhost:3000", allowCredentials = "true")
 @RestController
 @RequestMapping("/api/vouchers")
@@ -22,6 +24,12 @@ public class VoucherController {
     public ResponseEntity<Page<VoucherDto>> getAllVoucher(@RequestParam(defaultValue = "0") int page,
                                                           @RequestParam(defaultValue = "10") int size){
         Page<VoucherDto> voucherDtos = iVoucherService.getAllVoucher(page, size);
+        return ResponseEntity.ok(voucherDtos);
+    }
+
+    @GetMapping("/available-voucher")
+    public ResponseEntity<List<VoucherDto>> getAllPublishVoucher(@RequestParam String userId){
+        List<VoucherDto> voucherDtos = iVoucherService.getAllPublishVoucher(userId);
         return ResponseEntity.ok(voucherDtos);
     }
 

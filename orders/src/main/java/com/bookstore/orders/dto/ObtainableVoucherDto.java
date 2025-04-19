@@ -1,12 +1,12 @@
 package com.bookstore.orders.dto;
 
+import com.bookstore.orders.entity.BaseVoucherEntity;
 import lombok.Data;
 
 import java.util.Date;
 
 @Data
-public class VoucherDto {
-
+public class ObtainableVoucherDto{
     private String id;
 
     private String code;
@@ -20,9 +20,9 @@ public class VoucherDto {
     private Double minOrderValue;
     private int usageLimit;
 
-    private int userUsageLimit;
-    private boolean publish;
-
     private Date startDate;
     private Date endDate;
+
+    private boolean publicClaimable;
+    private Double valueRequirement;
 }
