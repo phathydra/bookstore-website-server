@@ -43,6 +43,13 @@ public class VoucherServiceImpl implements IVoucherService {
     }
 
     @Override
+    public Page<ObtainableVoucherDto> getAllObtainableVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ObtainableVoucher> vouchers = obtainableVoucherRepository.findAllBy(pageable);
+        return vouchers.map(voucher -> VoucherMapper.toObtainableVoucherDto(voucher, new ObtainableVoucherDto()));
+    }
+
+    @Override
     public List<VoucherDto> getAllPublishVoucher(String userId){
         List<Voucher> vouchers = voucherRepository.getAllByPublish(true);
         Optional<UsedVoucher> usedVoucher = usedVoucherRepository.findByUserId(userId);
@@ -109,6 +116,12 @@ public class VoucherServiceImpl implements IVoucherService {
     }
 
     @Override
+    public ObtainableVoucherDto createObtainableVoucher(ObtainableVoucherDto obtainableVoucherDto) {
+        ObtainableVoucher voucher = VoucherMapper.toObtainableVoucher(obtainableVoucherDto, new ObtainableVoucher());
+        return VoucherMapper.toObtainableVoucherDto(obtainableVoucherRepository.save(voucher), new ObtainableVoucherDto());
+    }
+
+    @Override
     public OrderVoucherDto applyVoucher(OrderVoucherDto orderVoucherDto) {
         OrderVoucher orderVoucher = VoucherMapper.toOrderVoucher(orderVoucherDto, new OrderVoucher());
         orderVoucherRepository.save(orderVoucher);
@@ -122,6 +135,18 @@ public class VoucherServiceImpl implements IVoucherService {
         if(voucher.isPresent()){
             Voucher updatedVoucher = VoucherMapper.toVoucher(voucherDto, voucher.get());
             return VoucherMapper.toVoucherDto(voucherRepository.save(updatedVoucher), new VoucherDto());
+        }
+        else{
+            throw new RuntimeException("Voucher not found with id: " + id);
+        }
+    }
+
+    @Override
+    public ObtainableVoucherDto updateObtainableVoucher(String id, ObtainableVoucherDto obtainableVoucherDto) {
+        Optional<ObtainableVoucher> voucher = obtainableVoucherRepository.findById(id);
+        if(voucher.isPresent()){
+            ObtainableVoucher updatedVoucher = VoucherMapper.toObtainableVoucher(obtainableVoucherDto, voucher.get());
+            return VoucherMapper.toObtainableVoucherDto(obtainableVoucherRepository.save(updatedVoucher), new ObtainableVoucherDto());
         }
         else{
             throw new RuntimeException("Voucher not found with id: " + id);
@@ -148,5 +173,10 @@ public class VoucherServiceImpl implements IVoucherService {
     @Override
     public void delete(String voucherId) {
         voucherRepository.deleteById(voucherId);
+    }
+
+    @Override
+    public void deleteObtainableVoucher(String id) {
+        obtainableVoucherRepository.deleteById(id);
     }
 }

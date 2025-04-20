@@ -11,6 +11,8 @@ import java.util.List;
 public interface IVoucherService {
     Page<VoucherDto> getAllVoucher(int page, int size);
 
+    Page<ObtainableVoucherDto> getAllObtainableVoucher(int page, int size);
+
     List<VoucherDto> getAllPublishVoucher(String userId);
 
     List<ObtainableVoucherDto> getAllPersonalVoucher(String userId);
@@ -20,11 +22,17 @@ public interface IVoucherService {
 
     VoucherDto createVoucher(VoucherDto voucherDto);
 
+    ObtainableVoucherDto createObtainableVoucher(ObtainableVoucherDto obtainableVoucherDto);
+
     OrderVoucherDto applyVoucher(OrderVoucherDto orderVoucherDto);
 
     VoucherDto updateVoucher(String id, VoucherDto voucherDto);
 
+    ObtainableVoucherDto updateObtainableVoucher(String id, ObtainableVoucherDto obtainableVoucherDto);
+
     void claimVoucher(String userId, ObtainableVoucherDto obtainableVoucherDto);
 
     void delete(String voucherId);
+
+    void deleteObtainableVoucher(String id);
 }
