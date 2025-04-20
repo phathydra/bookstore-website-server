@@ -16,7 +16,7 @@ public class OrderVoucher {
     private String id;
 
     private String orderId;
-    private String voucherId;
+    private String voucherCode;
 
     private Double discountedPrice;
 }

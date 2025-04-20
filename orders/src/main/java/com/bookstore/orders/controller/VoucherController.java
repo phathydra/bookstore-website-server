@@ -1,8 +1,6 @@
 package com.bookstore.orders.controller;
 
-import com.bookstore.orders.dto.OrderVoucherDto;
-import com.bookstore.orders.dto.ResponseDto;
-import com.bookstore.orders.dto.VoucherDto;
+import com.bookstore.orders.dto.*;
 import com.bookstore.orders.service.IVoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -27,6 +25,26 @@ public class VoucherController {
         return ResponseEntity.ok(voucherDtos);
     }
 
+    @GetMapping("/obtainable")
+    public ResponseEntity<Page<ObtainableVoucherDto>> getAllObtainableVoucher(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getAllObtainableVoucher(page, size);
+        return ResponseEntity.ok(obtainableVoucherDtos);
+    }
+
+    @GetMapping("/public-voucher")
+    public ResponseEntity<List<VoucherDto>> getPublicVoucher(@RequestParam String userId){
+        List<VoucherDto> voucherDtos = iVoucherService.getAllPublishVoucher(userId);
+        return ResponseEntity.ok(voucherDtos);
+    }
+
+    @GetMapping("/personal-voucher")
+    public ResponseEntity<List<ObtainableVoucherDto>> getPersonalVoucher(@RequestParam String userId){
+        List<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getAllPersonalVoucher(userId);
+        return ResponseEntity.ok(obtainableVoucherDtos);
+    }
+
     @GetMapping("/available-voucher")
     public ResponseEntity<List<VoucherDto>> getAllPublishVoucher(@RequestParam String userId){
         List<VoucherDto> voucherDtos = iVoucherService.getAllPublishVoucher(userId);
@@ -39,15 +57,36 @@ public class VoucherController {
         return ResponseEntity.ok(voucherDto);
     }
 
+    @GetMapping("/personal")
+    public ResponseEntity<ObtainableVoucherDto> getPersonalVoucherByCode(@RequestParam String code) {
+        ObtainableVoucherDto obtainableVoucherDto = iVoucherService.getPersonalVoucherByCode(code);
+        return ResponseEntity.ok(obtainableVoucherDto);
+    }
+
     @PostMapping("/apply-voucher")
     public ResponseEntity<OrderVoucherDto> applyVoucher(@RequestBody OrderVoucherDto orderVoucherDto){
         OrderVoucherDto orderVoucherDto1 = iVoucherService.applyVoucher(orderVoucherDto);
         return ResponseEntity.ok(orderVoucherDto1);
     }
 
+    @PostMapping("/claim")
+    public ResponseEntity<ResponseDto> claimVoucher(@RequestBody ClaimVoucherRequestDto claimVoucherRequest) {
+        iVoucherService.claimVoucher(claimVoucherRequest.getUserId(), claimVoucherRequest.getObtainableVoucherDto());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new ResponseDto("200", "Voucher claimed successfully"));
+    }
+
     @PostMapping("")
     public ResponseEntity<VoucherDto> createVoucher(@RequestBody VoucherDto voucherDto){
         VoucherDto createdVoucher = iVoucherService.createVoucher(voucherDto);
+        return ResponseEntity.ok(createdVoucher);
+    }
+
+    @PostMapping("/obtainable")
+    public ResponseEntity<ObtainableVoucherDto> createObtainableVoucher(
+            @RequestBody ObtainableVoucherDto obtainableVoucherDto) {
+        ObtainableVoucherDto createdVoucher = iVoucherService.createObtainableVoucher(obtainableVoucherDto);
         return ResponseEntity.ok(createdVoucher);
     }
 
@@ -57,9 +96,25 @@ public class VoucherController {
         return ResponseEntity.ok(updatedVoucher);
     }
 
+    @PutMapping("/obtainable/{id}")
+    public ResponseEntity<ObtainableVoucherDto> updateObtainableVoucher(
+            @PathVariable String id,
+            @RequestBody ObtainableVoucherDto obtainableVoucherDto) {
+        ObtainableVoucherDto updatedVoucher = iVoucherService.updateObtainableVoucher(id, obtainableVoucherDto);
+        return ResponseEntity.ok(updatedVoucher);
+    }
+
     @DeleteMapping("{id}")
     public ResponseEntity<ResponseDto> deleteVoucher(@PathVariable String id){
         iVoucherService.delete(id);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new ResponseDto("200", "Delete successfully"));
+    }
+
+    @DeleteMapping("/obtainable/{id}")
+    public ResponseEntity<ResponseDto> deleteObtainableVoucher(@PathVariable String id) {
+        iVoucherService.deleteObtainableVoucher(id);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(new ResponseDto("200", "Delete successfully"));

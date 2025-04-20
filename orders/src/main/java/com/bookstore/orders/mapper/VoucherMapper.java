@@ -75,14 +75,14 @@ public class VoucherMapper {
 
     static public OrderVoucher toOrderVoucher(OrderVoucherDto orderVoucherDto, OrderVoucher orderVoucher){
         orderVoucher.setOrderId(orderVoucherDto.getOrderId());
-        orderVoucher.setVoucherId(orderVoucherDto.getVoucherId());
+        orderVoucher.setVoucherCode(orderVoucherDto.getVoucherCode());
         orderVoucher.setDiscountedPrice(orderVoucherDto.getDiscountedPrice());
         return orderVoucher;
     }
 
     static public OrderVoucherDto toOrderVoucherDto(OrderVoucher orderVoucher, OrderVoucherDto orderVoucherDto){
         orderVoucherDto.setOrderId(orderVoucher.getOrderId());
-        orderVoucherDto.setVoucherId(orderVoucher.getVoucherId());
+        orderVoucherDto.setVoucherCode(orderVoucher.getVoucherCode());
         orderVoucherDto.setDiscountedPrice(orderVoucher.getDiscountedPrice());
         return orderVoucherDto;
     }
