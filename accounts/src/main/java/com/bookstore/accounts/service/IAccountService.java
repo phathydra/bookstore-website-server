@@ -2,12 +2,11 @@ package com.bookstore.accounts.service;
 
 import com.bookstore.accounts.dto.AccountDto;
 import com.bookstore.accounts.dto.InformationDto;
+import com.bookstore.accounts.entity.Account;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
-
 public interface IAccountService {
-    void createAccount(AccountDto accountDto);
+    Account createAccount(AccountDto accountDto);
 
     InformationDto fetchInformation(String accountId);
 
@@ -26,4 +25,9 @@ public interface IAccountService {
     Page<AccountDto> searchAccounts(int page, int size, String input);
 
     Page<InformationDto> searchInformation(int page, int size, String input);
+
+    boolean activateAccount(String accountId);
+
+    void resetPasswordByEmail(String email);
+
 }

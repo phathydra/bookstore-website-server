@@ -6,14 +6,17 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "accounts")
 @Getter @Setter @ToString @AllArgsConstructor @NoArgsConstructor
-public class Account{
+public class Account {
 
     @Id
     private String accountId;
 
-    private String username;
+    private String email;
 
     private String password;
 
     private String role;
+
+    private String status;
+
 }
