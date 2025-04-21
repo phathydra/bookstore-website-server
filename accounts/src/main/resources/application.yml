@@ -6,5 +6,20 @@ spring:
     mongodb:
       uri: mongodb+srv://toanphat124:0984029574Phat%21@cluster0.jmrvw.mongodb.net/BookStore
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: lethanhhung1104nhon@gmail.com
+    password: ootxlylpgtdt ovwm
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
 server:
   port: 8080

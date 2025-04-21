@@ -5,6 +5,7 @@ import com.bookstore.accounts.dto.AccountDto;
 import com.bookstore.accounts.dto.InformationDto;
 import com.bookstore.accounts.dto.ResponseDto;
 import com.bookstore.accounts.entity.Account;
+import com.bookstore.accounts.exception.UsernameAlreadyExistException;
 import com.bookstore.accounts.repository.AccountRepository;
 import com.bookstore.accounts.service.IAccountService;
 
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -32,18 +34,38 @@ public class AccountController {
     private AccountRepository accountRepository;
     private IAccountService iAccountService;
     private final IAccountService accountService;
+    private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody AccountDto accountDto) {
-        Optional<Account> account = accountRepository.findByUsernameAndPassword(accountDto.getUsername(), accountDto.getPassword());
+        Optional<Account> accountOpt = accountRepository.findByEmail(accountDto.getEmail());
 
         Map<String, Object> response = new HashMap<>();
-        if (account != null) {
-            response.put("statusCode", "200");
-            response.put("statusMsg", "Login successful");
-            response.put("accountId", account.get().getAccountId()); // Chỉ trả về accountId
 
-            return ResponseEntity.status(HttpStatus.OK).body(response);
+        if (accountOpt.isPresent()) {
+            Account account = accountOpt.get();
+
+            // So sánh password đã mã hóa
+            if (passwordEncoder.matches(accountDto.getPassword(), account.getPassword())) {
+
+                if ("Active".equalsIgnoreCase(account.getStatus())) {
+                    response.put("statusCode", "200");
+                    response.put("statusMsg", "Login successful");
+                    response.put("accountId", account.getAccountId());
+                    response.put("role", account.getRole());
+                    return ResponseEntity.status(HttpStatus.OK).body(response);
+                } else {
+                    response.put("statusCode", "403");
+                    response.put("statusMsg", "Account is inactive");
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+                }
+
+            } else {
+                response.put("statusCode", "401");
+                response.put("statusMsg", "Invalid credentials");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+
         } else {
             response.put("statusCode", "401");
             response.put("statusMsg", "Invalid credentials");
@@ -51,16 +73,27 @@ public class AccountController {
         }
     }
 
-
-
-
     @PostMapping("/create")
-    public ResponseEntity<ResponseDto> createAccount(@RequestBody AccountDto accountDto){
-        iAccountService.createAccount(accountDto);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new ResponseDto(AccountConstants.STATUS_201, AccountConstants.MESSAGE_201));
+    public ResponseEntity<Map<String, Object>> createAccount(@RequestBody AccountDto accountDto) {
+        try {
+            Account createdAccount = iAccountService.createAccount(accountDto);
+            Map<String, Object> response = new HashMap<>();
+            response.put("statusCode", AccountConstants.STATUS_201);
+            response.put("statusMsg", AccountConstants.MESSAGE_201);
+            response.put("accountId", createdAccount.getAccountId()); // Thêm accountId vào response
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(response);
+        } catch (UsernameAlreadyExistException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("statusCode", AccountConstants.STATUS_400);
+            errorResponse.put("statusMsg", "Email already exists");
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(errorResponse);
+        }
     }
+
 
     @GetMapping("/fetch")
     public ResponseEntity<InformationDto> fetchAccountInformation(@RequestParam String accountId){
@@ -162,6 +195,31 @@ public class AccountController {
             return ResponseEntity.ok(informationDtoPage);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
+        }
+    }
+    @PutMapping("/activate")
+    public ResponseEntity<ResponseDto> activateAccount(@RequestParam String accountId) {
+        boolean isActivated = iAccountService.activateAccount(accountId);
+        if (isActivated) {
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseDto(AccountConstants.STATUS_200, "Account activated successfully"));
+        } else {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseDto(AccountConstants.STATUS_404, "Account not found"));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseDto> resetPassword(@RequestParam String email) {
+        try {
+            accountService.resetPasswordByEmail(email);
+            ResponseDto responseDto = new ResponseDto("Password reset successfully. Please check your email.", HttpStatus.OK.toString());
+            return new ResponseEntity<>(responseDto, HttpStatus.OK);
+        } catch (Exception e) {
+            ResponseDto responseDto = new ResponseDto(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.toString());
+            return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
