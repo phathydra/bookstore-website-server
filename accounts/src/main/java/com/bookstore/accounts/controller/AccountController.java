@@ -222,4 +222,21 @@ public class AccountController {
             return new ResponseEntity<>(responseDto, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ResponseDto> changePassword(
+            @RequestParam String accountId,
+            @RequestParam String oldPassword,
+            @RequestParam String newPassword) {
+        boolean isChanged = accountService.changePassword(accountId, oldPassword, newPassword);
+        if (isChanged) {
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseDto(AccountConstants.STATUS_200, "Password changed successfully"));
+        } else {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseDto(AccountConstants.STATUS_400, "Incorrect old password"));
+        }
+    }
 }
