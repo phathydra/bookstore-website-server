@@ -220,4 +220,26 @@ public class AccountServiceImpl implements IAccountService {
 
         return password.toString();
     }
+
+    @Override
+    public boolean changePassword(String accountId, String oldPassword, String newPassword) {
+        Optional<Account> accountOptional = accountRepository.findById(accountId);
+
+        if (accountOptional.isEmpty()) {
+            throw new ResourceNotFoundException("Account not found with ID: " + accountId);
+        }
+
+        Account account = accountOptional.get();
+
+        // So sánh mật khẩu cũ đã gửi với mật khẩu hiện tại đã mã hóa
+        if (passwordEncoder.matches(oldPassword, account.getPassword())) {
+            // Mã hóa mật khẩu mới và cập nhật vào database
+            String encodedNewPassword = passwordEncoder.encode(newPassword);
+            account.setPassword(encodedNewPassword);
+            accountRepository.save(account);
+            return true; // Đổi mật khẩu thành công
+        } else {
+            return false; // Mật khẩu cũ không đúng
+        }
+    }
 }

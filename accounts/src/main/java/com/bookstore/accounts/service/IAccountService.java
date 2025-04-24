@@ -30,4 +30,5 @@ public interface IAccountService {
 
     void resetPasswordByEmail(String email);
 
+    boolean changePassword(String accountId, String oldPassword, String newPassword);
 }
