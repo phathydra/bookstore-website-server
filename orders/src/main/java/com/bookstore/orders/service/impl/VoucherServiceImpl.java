@@ -14,7 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +33,9 @@ public class VoucherServiceImpl implements IVoucherService {
 
     @Autowired
     private ObtainedVoucherRepository obtainedVoucherRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Override
     public Page<VoucherDto> getAllVoucher(int page, int size) {
@@ -65,7 +67,12 @@ public class VoucherServiceImpl implements IVoucherService {
             }
         }
         else{
-            return Collections.emptyList();
+            UsedVoucher usedVoucher1 = new UsedVoucher();
+            List<String> usedCode = new ArrayList<>();
+            usedVoucher1.setAccountId(userId);
+            usedVoucher1.setUserVoucherCodes(usedCode);
+            usedVoucherRepository.save(usedVoucher1);
+            getAllPublishVoucher(userId);
         }
         return voucherDtos;
     }
@@ -86,7 +93,27 @@ public class VoucherServiceImpl implements IVoucherService {
         else {
             throw new RuntimeException("Unable to load personal vouchers");
         }
+    }
 
+    @Override
+    public List<ObtainableVoucherDto> automaticallyObtainVoucher(String orderId){
+        List<ObtainableVoucher> obtainableVouchers = obtainableVoucherRepository.getObtainableVoucherByPublicClaimable(false);
+        Optional<Order> placedOrder = orderRepository.findById(orderId);
+        Double totalPrice = placedOrder.get().getTotalPrice();
+
+        List<ObtainableVoucherDto> claimableVouchers = new ArrayList<>();
+        for (ObtainableVoucher voucher: obtainableVouchers){
+            if(totalPrice >= voucher.getValueRequirement()){
+                claimableVouchers.add(VoucherMapper.toObtainableVoucherDto(voucher, new ObtainableVoucherDto()));
+            }
+        }
+        if(!claimableVouchers.isEmpty()){
+            ObtainedVoucher obtainedVoucher = new ObtainedVoucher();
+            obtainedVoucher.setAccountId(placedOrder.get().getAccountId());
+            obtainedVoucher.setObtainedVouchers(claimableVouchers.stream().map(voucher -> voucher.getCode()).toList());
+            obtainedVoucherRepository.save(obtainedVoucher);
+        }
+        return claimableVouchers;
     }
 
     @Override
@@ -125,6 +152,19 @@ public class VoucherServiceImpl implements IVoucherService {
     public OrderVoucherDto applyVoucher(OrderVoucherDto orderVoucherDto) {
         OrderVoucher orderVoucher = VoucherMapper.toOrderVoucher(orderVoucherDto, new OrderVoucher());
         orderVoucherRepository.save(orderVoucher);
+        Optional<Order> placedOrder = orderRepository.findById(orderVoucherDto.getOrderId());
+        Optional<Voucher> voucher = voucherRepository.getVoucherByCode(orderVoucherDto.getVoucherCode());
+        if(voucher.isEmpty()){
+            Optional<ObtainableVoucher> obtainableVoucher = obtainableVoucherRepository.getObtainableVoucherByCode(orderVoucherDto.getVoucherCode());
+            Optional<UsedVoucher> usedVoucher = usedVoucherRepository.findByAccountId(placedOrder.get().getAccountId());
+            usedVoucher.get().getUserVoucherCodes().add(obtainableVoucher.get().getCode());
+            usedVoucherRepository.save(usedVoucher.get());
+        }
+        else {
+            Optional<UsedVoucher> usedVoucher = usedVoucherRepository.findByAccountId(placedOrder.get().getAccountId());
+            usedVoucher.get().getUserVoucherCodes().add(voucher.get().getCode());
+            usedVoucherRepository.save(usedVoucher.get());
+        }
         return orderVoucherDto;
     }
 
@@ -162,7 +202,7 @@ public class VoucherServiceImpl implements IVoucherService {
         }
         else {
             ObtainedVoucher obtainedVoucher = new ObtainedVoucher();
-            obtainedVoucher.setUserId(userId);
+            obtainedVoucher.setAccountId(userId);
             List<String> obtainedVoucherCodes = new ArrayList<>();
             obtainedVoucherCodes.add(obtainableVoucherDto.getCode());
             obtainedVoucher.setObtainedVouchers(obtainedVoucherCodes);

@@ -16,6 +16,8 @@ public interface IVoucherService {
     List<VoucherDto> getAllPublishVoucher(String userId);
 
     List<ObtainableVoucherDto> getAllPersonalVoucher(String userId);
+
+    List<ObtainableVoucherDto> automaticallyObtainVoucher(String orderId);
     VoucherDto getVoucherByCode(String code);
 
     ObtainableVoucherDto getPersonalVoucherByCode(String code);
