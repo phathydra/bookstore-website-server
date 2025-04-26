@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class ClaimVoucherRequestDto {
-    private String userId;
+    private String accountId;
 
     private ObtainableVoucherDto obtainableVoucherDto;
 }
