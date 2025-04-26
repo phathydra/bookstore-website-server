@@ -120,10 +120,17 @@ public class VoucherServiceImpl implements IVoucherService {
             }
         }
         if(!claimableVouchers.isEmpty()){
-            ObtainedVoucher obtainedVoucher = new ObtainedVoucher();
-            obtainedVoucher.setAccountId(placedOrder.get().getAccountId());
-            obtainedVoucher.setObtainedVouchers(claimableVouchers.stream().map(voucher -> voucher.getCode()).toList());
-            obtainedVoucherRepository.save(obtainedVoucher);
+            Optional<ObtainedVoucher> existed = obtainedVoucherRepository.getObtainedVoucherByAccountId(placedOrder.get().getAccountId());
+            if(existed.isPresent()){
+                existed.get().getObtainedVouchers().addAll(claimableVouchers.stream().map(voucher -> voucher.getCode()).toList());
+                obtainedVoucherRepository.save(existed.get());
+            }
+            else {
+                ObtainedVoucher obtainedVoucher = new ObtainedVoucher();
+                obtainedVoucher.setAccountId(placedOrder.get().getAccountId());
+                obtainedVoucher.setObtainedVouchers(claimableVouchers.stream().map(voucher -> voucher.getCode()).toList());
+                obtainedVoucherRepository.save(obtainedVoucher);
+            }
         }
         return claimableVouchers;
     }
