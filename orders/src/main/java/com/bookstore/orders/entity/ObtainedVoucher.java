@@ -17,7 +17,7 @@ public class ObtainedVoucher{
     @Id
     private String id;
 
-    private String userId;
+    private String accountId;
 
     private List<String> obtainedVouchers;
 }

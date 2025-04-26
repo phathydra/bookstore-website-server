@@ -76,6 +76,12 @@ public class VoucherController {
                 .body(new ResponseDto("200", "Voucher claimed successfully"));
     }
 
+    @GetMapping("/obtain")
+    public ResponseEntity<List<ObtainableVoucherDto>> automaticallyObtainVoucher(@RequestParam String orderId){
+        List<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.automaticallyObtainVoucher(orderId);
+        return ResponseEntity.ok(obtainableVoucherDtos);
+    }
+
     @PostMapping("")
     public ResponseEntity<VoucherDto> createVoucher(@RequestBody VoucherDto voucherDto){
         VoucherDto createdVoucher = iVoucherService.createVoucher(voucherDto);
