@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface ObtainedVoucherRepository extends MongoRepository<ObtainedVoucher, String> {
-    Optional<ObtainedVoucher> getObtainedVoucherByUserId(String userId);
+    Optional<ObtainedVoucher> getObtainedVoucherByAccountId(String userId);
 }

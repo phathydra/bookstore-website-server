@@ -38,16 +38,22 @@ public class VoucherController {
 
     // User personal vouchers
     @GetMapping("/personal-voucher")
-    public ResponseEntity<List<ObtainableVoucherDto>> getPersonalVoucher(@RequestParam String userId){
-        List<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getAllPersonalVoucher(userId);
+    public ResponseEntity<List<ObtainableVoucherDto>> getPersonalVoucher(@RequestParam String accountId){
+        List<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getAllPersonalVoucher(accountId);
         return ResponseEntity.ok(obtainableVoucherDtos);
     }
 
     // Public vouchers
     @GetMapping("/available-voucher")
-    public ResponseEntity<List<VoucherDto>> getAllPublishVoucher(@RequestParam String userId){
-        List<VoucherDto> voucherDtos = iVoucherService.getAllPublishVoucher(userId);
+    public ResponseEntity<List<VoucherDto>> getAllPublishVoucher(@RequestParam String accountId){
+        List<VoucherDto> voucherDtos = iVoucherService.getAllPublishVoucher(accountId);
         return ResponseEntity.ok(voucherDtos);
+    }
+
+    @GetMapping("/claimable")
+    public ResponseEntity<List<ObtainableVoucherDto>> getAllClaimableVoucher(@RequestParam String accountId){
+        List<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getAllPublicClaimableVoucher(accountId);
+        return ResponseEntity.ok(obtainableVoucherDtos);
     }
 
     @GetMapping("/get-voucher")
@@ -70,7 +76,7 @@ public class VoucherController {
 
     @PostMapping("/claim")
     public ResponseEntity<ResponseDto> claimVoucher(@RequestBody ClaimVoucherRequestDto claimVoucherRequest) {
-        iVoucherService.claimVoucher(claimVoucherRequest.getUserId(), claimVoucherRequest.getObtainableVoucherDto());
+        iVoucherService.claimVoucher(claimVoucherRequest.getAccountId(), claimVoucherRequest.getObtainableVoucherDto());
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(new ResponseDto("200", "Voucher claimed successfully"));

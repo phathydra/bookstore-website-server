@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,9 +53,9 @@ public class VoucherServiceImpl implements IVoucherService {
     }
 
     @Override
-    public List<VoucherDto> getAllPublishVoucher(String userId){
+    public List<VoucherDto> getAllPublishVoucher(String accountId){
         List<Voucher> vouchers = voucherRepository.getAllByPublish(true);
-        Optional<UsedVoucher> usedVoucher = usedVoucherRepository.findByUserId(userId);
+        Optional<UsedVoucher> usedVoucher = usedVoucherRepository.findByAccountId(accountId);
         List<VoucherDto> voucherDtos = vouchers.stream().map(voucher -> VoucherMapper.toVoucherDto(voucher, new VoucherDto())).toList();
         if(usedVoucher.isPresent()){
             List<String> usedVoucherCodes = usedVoucher.get().getUserVoucherCodes();
@@ -69,17 +70,17 @@ public class VoucherServiceImpl implements IVoucherService {
         else{
             UsedVoucher usedVoucher1 = new UsedVoucher();
             List<String> usedCode = new ArrayList<>();
-            usedVoucher1.setAccountId(userId);
+            usedVoucher1.setAccountId(accountId);
             usedVoucher1.setUserVoucherCodes(usedCode);
             usedVoucherRepository.save(usedVoucher1);
-            getAllPublishVoucher(userId);
+            getAllPublishVoucher(accountId);
         }
         return voucherDtos;
     }
 
     @Override
-    public List<ObtainableVoucherDto> getAllPersonalVoucher(String userId){
-        Optional<ObtainedVoucher> obtainedVoucher = obtainedVoucherRepository.getObtainedVoucherByUserId(userId);
+    public List<ObtainableVoucherDto> getAllPersonalVoucher(String accountId){
+        Optional<ObtainedVoucher> obtainedVoucher = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
         if(obtainedVoucher.isPresent()){
             List<String> codes = obtainedVoucher.get().getObtainedVouchers();
             List<ObtainableVoucherDto> obtainableVoucherDtos = new ArrayList<>();
@@ -91,8 +92,19 @@ public class VoucherServiceImpl implements IVoucherService {
             return  obtainableVoucherDtos;
         }
         else {
-            throw new RuntimeException("Unable to load personal vouchers");
+            throw new RuntimeException("Dont have any vouchers");
         }
+    }
+
+    @Override
+    public List<ObtainableVoucherDto> getAllPublicClaimableVoucher(String accountId){
+        Optional<ObtainedVoucher> obtainedVoucher = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
+        List<ObtainableVoucher> obtainableVouchers = obtainableVoucherRepository.getObtainableVoucherByPublicClaimable(true);
+        if(obtainedVoucher.isPresent()){
+            List<String> ownedVoucherCodes = obtainedVoucher.get().getObtainedVouchers();
+            obtainableVouchers.removeIf(voucher -> ownedVoucherCodes.contains(voucher.getCode()));
+        }
+        return obtainableVouchers.stream().map(voucher -> VoucherMapper.toObtainableVoucherDto(voucher, new ObtainableVoucherDto())).toList();
     }
 
     @Override
@@ -149,21 +161,25 @@ public class VoucherServiceImpl implements IVoucherService {
     }
 
     @Override
+    @Transactional
     public OrderVoucherDto applyVoucher(OrderVoucherDto orderVoucherDto) {
         OrderVoucher orderVoucher = VoucherMapper.toOrderVoucher(orderVoucherDto, new OrderVoucher());
         orderVoucherRepository.save(orderVoucher);
         Optional<Order> placedOrder = orderRepository.findById(orderVoucherDto.getOrderId());
         Optional<Voucher> voucher = voucherRepository.getVoucherByCode(orderVoucherDto.getVoucherCode());
+        Optional<UsedVoucher> usedVoucher = usedVoucherRepository.findByAccountId(placedOrder.get().getAccountId());
         if(voucher.isEmpty()){
             Optional<ObtainableVoucher> obtainableVoucher = obtainableVoucherRepository.getObtainableVoucherByCode(orderVoucherDto.getVoucherCode());
-            Optional<UsedVoucher> usedVoucher = usedVoucherRepository.findByAccountId(placedOrder.get().getAccountId());
             usedVoucher.get().getUserVoucherCodes().add(obtainableVoucher.get().getCode());
             usedVoucherRepository.save(usedVoucher.get());
+            obtainableVoucher.get().setUsageLimit(obtainableVoucher.get().getUsageLimit() - 1);
+            obtainableVoucherRepository.save(obtainableVoucher.get());
         }
         else {
-            Optional<UsedVoucher> usedVoucher = usedVoucherRepository.findByAccountId(placedOrder.get().getAccountId());
             usedVoucher.get().getUserVoucherCodes().add(voucher.get().getCode());
             usedVoucherRepository.save(usedVoucher.get());
+            voucher.get().setUsageLimit(voucher.get().getUsageLimit() - 1);
+            voucherRepository.save(voucher.get());
         }
         return orderVoucherDto;
     }
@@ -194,15 +210,15 @@ public class VoucherServiceImpl implements IVoucherService {
     }
 
     @Override
-    public void claimVoucher(String userId, ObtainableVoucherDto obtainableVoucherDto){
-        Optional<ObtainedVoucher> oldVouchers = obtainedVoucherRepository.getObtainedVoucherByUserId(userId);
+    public void claimVoucher(String accountId, ObtainableVoucherDto obtainableVoucherDto){
+        Optional<ObtainedVoucher> oldVouchers = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
         if(oldVouchers.isPresent()){
             oldVouchers.get().getObtainedVouchers().add(obtainableVoucherDto.getCode());
             obtainedVoucherRepository.save(oldVouchers.get());
         }
         else {
             ObtainedVoucher obtainedVoucher = new ObtainedVoucher();
-            obtainedVoucher.setAccountId(userId);
+            obtainedVoucher.setAccountId(accountId);
             List<String> obtainedVoucherCodes = new ArrayList<>();
             obtainedVoucherCodes.add(obtainableVoucherDto.getCode());
             obtainedVoucher.setObtainedVouchers(obtainedVoucherCodes);
