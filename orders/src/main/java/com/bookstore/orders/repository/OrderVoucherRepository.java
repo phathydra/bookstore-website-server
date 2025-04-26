@@ -11,5 +11,5 @@ import java.util.Optional;
 public interface OrderVoucherRepository extends MongoRepository<OrderVoucher, String> {
     Optional<OrderVoucher> findByOrderId(String orderId);
 
-    List<OrderVoucher> findByVoucherId(String id);
+    List<OrderVoucher> findByVoucherCode(String code);
 }

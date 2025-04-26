@@ -20,9 +20,9 @@ public class ObtainableVoucherDto{
     private Double minOrderValue;
     private int usageLimit;
 
-    private Date startDate;
-    private Date endDate;
-
     private boolean publicClaimable;
     private Double valueRequirement;
+
+    private Date startDate;
+    private Date endDate;
 }
