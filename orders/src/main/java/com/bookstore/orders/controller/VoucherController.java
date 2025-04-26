@@ -18,6 +18,7 @@ public class VoucherController {
     @Autowired
     private IVoucherService iVoucherService;
 
+    // Voucher management for admin
     @GetMapping("")
     public ResponseEntity<Page<VoucherDto>> getAllVoucher(@RequestParam(defaultValue = "0") int page,
                                                           @RequestParam(defaultValue = "10") int size){
@@ -25,6 +26,8 @@ public class VoucherController {
         return ResponseEntity.ok(voucherDtos);
     }
 
+
+    // Obtainable voucher management for admin
     @GetMapping("/obtainable")
     public ResponseEntity<Page<ObtainableVoucherDto>> getAllObtainableVoucher(
             @RequestParam(defaultValue = "0") int page,
@@ -33,18 +36,14 @@ public class VoucherController {
         return ResponseEntity.ok(obtainableVoucherDtos);
     }
 
-    @GetMapping("/public-voucher")
-    public ResponseEntity<List<VoucherDto>> getPublicVoucher(@RequestParam String userId){
-        List<VoucherDto> voucherDtos = iVoucherService.getAllPublishVoucher(userId);
-        return ResponseEntity.ok(voucherDtos);
-    }
-
+    // User personal vouchers
     @GetMapping("/personal-voucher")
     public ResponseEntity<List<ObtainableVoucherDto>> getPersonalVoucher(@RequestParam String userId){
         List<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getAllPersonalVoucher(userId);
         return ResponseEntity.ok(obtainableVoucherDtos);
     }
 
+    // Public vouchers
     @GetMapping("/available-voucher")
     public ResponseEntity<List<VoucherDto>> getAllPublishVoucher(@RequestParam String userId){
         List<VoucherDto> voucherDtos = iVoucherService.getAllPublishVoucher(userId);
