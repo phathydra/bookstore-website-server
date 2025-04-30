@@ -5,6 +5,7 @@ import com.bookstore.orders.entity.Order;
 import com.bookstore.orders.entity.OrderItem;
 import com.bookstore.orders.mapper.OrderMapper;
 import com.bookstore.orders.repository.OrderRepository;
+import com.bookstore.orders.service.ICartService;
 import com.bookstore.orders.service.IOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +31,8 @@ public class OrderServiceImpl implements IOrderService {
     private OrderRepository orderRepository;
 
     @Autowired
+    private ICartService iCartService;
+    @Autowired
     private OrderMapper orderMapper;
 
     @Autowired
@@ -43,6 +46,7 @@ public class OrderServiceImpl implements IOrderService {
     public Order createOrder(OrderDto orderDto) {
         Order order = orderMapper.toEntity(orderDto);
         Order savedOrder = orderRepository.save(order);
+        String accountId = savedOrder.getAccountId();
 
         for (OrderItem item : savedOrder.getOrderItems()) {
             String bookId = item.getBookId();
@@ -59,6 +63,8 @@ public class OrderServiceImpl implements IOrderService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             DecreaseStockRequest requestEntity = new DecreaseStockRequest(quantity);
+
+            iCartService.removeItem(accountId, bookId);
 
             try {
                 restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(requestEntity, headers), Void.class);
