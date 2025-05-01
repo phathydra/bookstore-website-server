@@ -37,7 +37,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3001")); // Chỉ cho phép nguồn gốc này
+        configuration.setAllowedOrigins(List.of("http://localhost:3001", "http://localhost:3000")); // Chỉ cho phép nguồn gốc này
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true); // Nếu bạn cần gửi cookie hoặc thông tin xác thực
