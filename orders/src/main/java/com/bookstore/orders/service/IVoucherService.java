@@ -9,7 +9,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public interface IVoucherService {
-    Page<VoucherDto> getAllVoucher(int page, int size);
+    Page<VoucherDto> getAllVoucher(int page, int size, String code);
 
     Page<ObtainableVoucherDto> getAllObtainableVoucher(int page, int size);
 

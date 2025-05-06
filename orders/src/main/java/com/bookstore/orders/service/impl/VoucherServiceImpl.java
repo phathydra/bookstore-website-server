@@ -39,16 +39,16 @@ public class VoucherServiceImpl implements IVoucherService {
     private OrderRepository orderRepository;
 
     @Override
-    public Page<VoucherDto> getAllVoucher(int page, int size) {
+    public Page<VoucherDto> getAllVoucher(int page, int size, String code) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Voucher> vouchers = voucherRepository.findAllBy(pageable);
+        Page<Voucher> vouchers = voucherRepository.findAllByCodeContainingIgnoreCaseOrderByEndDateDesc(pageable, code);
         return vouchers.map(voucher -> VoucherMapper.toVoucherDto(voucher, new VoucherDto()));
     }
 
     @Override
     public Page<ObtainableVoucherDto> getAllObtainableVoucher(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<ObtainableVoucher> vouchers = obtainableVoucherRepository.findAllBy(pageable);
+        Page<ObtainableVoucher> vouchers = obtainableVoucherRepository.findAllByOrderByEndDateDesc(pageable);
         return vouchers.map(voucher -> VoucherMapper.toObtainableVoucherDto(voucher, new ObtainableVoucherDto()));
     }
 
