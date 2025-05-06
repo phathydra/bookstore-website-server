@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ObtainableVoucherRepository extends MongoRepository<ObtainableVoucher, String> {
     Optional<ObtainableVoucher> getObtainableVoucherByCode(String code);
 
-    Page<ObtainableVoucher> findAllBy(Pageable pageable);
+    Page<ObtainableVoucher> findAllByOrderByEndDateDesc(Pageable pageable);
 
     List<ObtainableVoucher> getObtainableVoucherByPublicClaimable(boolean publicClaimable);
 }

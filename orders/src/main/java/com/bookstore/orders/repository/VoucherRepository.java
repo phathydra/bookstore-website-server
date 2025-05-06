@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface VoucherRepository extends MongoRepository<Voucher, String> {
 
-    Page<Voucher> findAllBy(Pageable pageable);
+    Page<Voucher> findAllByCodeContainingIgnoreCaseOrderByEndDateDesc(Pageable pageable, String code);
     Optional<Voucher> getVoucherByCode(String code);
 
     List<Voucher> getAllByPublish(boolean publish);

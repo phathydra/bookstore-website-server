@@ -21,8 +21,9 @@ public class VoucherController {
     // Voucher management for admin
     @GetMapping("")
     public ResponseEntity<Page<VoucherDto>> getAllVoucher(@RequestParam(defaultValue = "0") int page,
-                                                          @RequestParam(defaultValue = "10") int size){
-        Page<VoucherDto> voucherDtos = iVoucherService.getAllVoucher(page, size);
+                                                          @RequestParam(defaultValue = "10") int size,
+                                                          @RequestParam(defaultValue = "") String code){
+        Page<VoucherDto> voucherDtos = iVoucherService.getAllVoucher(page, size, code);
         return ResponseEntity.ok(voucherDtos);
     }
 
