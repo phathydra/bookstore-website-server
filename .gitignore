@@ -1,0 +1,5 @@
+accounts/src/main/resources/application.yml
+
+books/src/main/resources/application.yml
+
+orders/src/main/resources/application.yml
