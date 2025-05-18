@@ -12,9 +12,5 @@ cd orders
 start cmd /k mvn spring-boot:run
 cd ..
 
-cd chatbot
-start cmd /k mvn spring-boot:run
-cd ..
-
 exit
 
