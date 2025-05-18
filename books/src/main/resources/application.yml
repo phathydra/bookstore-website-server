@@ -1,9 +1,0 @@
-server:
-  port: 8081
-
-spring:
-  data:
-    mongodb:
-      uri: mongodb+srv://tlcn_user:bookwebsite@cluster0.jmrvw.mongodb.net/BookStore
-  main:
-    allow-bean-definition-overriding: true
