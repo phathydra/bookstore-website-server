@@ -1,3 +1,4 @@
+// src/main/java/com/bookstore/orders/service/impl/OrderServiceImpl.java
 package com.bookstore.orders.service.impl;
 
 import com.bookstore.orders.dto.OrderDto;
@@ -36,9 +37,9 @@ public class OrderServiceImpl implements IOrderService {
     private OrderMapper orderMapper;
 
     @Autowired
-    private RestTemplate restTemplate; // Inject RestTemplate
+    private RestTemplate restTemplate;
 
-    @Value("${book-service.base-url}") // Đọc URL base của book service từ configuration
+    @Value("${book-service.base-url}")
     private String bookServiceBaseUrl;
 
     @Override
@@ -52,7 +53,6 @@ public class OrderServiceImpl implements IOrderService {
             String bookId = item.getBookId();
             int quantity = item.getQuantity();
 
-            // Gọi API của book service để giảm số lượng
             String url = UriComponentsBuilder.fromHttpUrl(bookServiceBaseUrl)
                     .path("/api/book/")
                     .path(bookId)
@@ -69,7 +69,6 @@ public class OrderServiceImpl implements IOrderService {
             try {
                 restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(requestEntity, headers), Void.class);
             } catch (Exception e) {
-                // Xử lý lỗi khi gọi book service (ví dụ: log lỗi, rollback transaction nếu cần)
                 throw new RuntimeException("Lỗi khi gọi book service để giảm số lượng sách: " + e.getMessage());
             }
         }
@@ -79,12 +78,12 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public List<Order> getOrdersByAccountId(String accountId) {
-        return orderRepository.findByAccountIdOrderByDateOrderDesc(accountId);  // Fetch orders by accountId
+        return orderRepository.findByAccountIdOrderByDateOrderDesc(accountId);
     }
 
     @Override
     public Optional<Order> getOrderById(String orderId) {
-        return orderRepository.findById(orderId);  // Tìm đơn hàng theo orderId
+        return orderRepository.findById(orderId);
     }
 
     @Override
@@ -99,7 +98,7 @@ public class OrderServiceImpl implements IOrderService {
 
         if (orderOptional.isPresent()) {
             Order order = orderOptional.get();
-            order.setShippingStatus(shippingStatus); // Giả sử Order có trường shippingStatus
+            order.setShippingStatus(shippingStatus);
             orderRepository.save(order);
             return Optional.of(order);
         }
@@ -107,7 +106,29 @@ public class OrderServiceImpl implements IOrderService {
         return Optional.empty();
     }
 
-    // Tạo một DTO cho request giảm số lượng
+    @Override
+    public Page<Order> getFilteredAndSearchedOrders(int page, int size, String shippingStatus, String search) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        boolean hasStatusFilter = shippingStatus != null && !shippingStatus.isEmpty();
+        boolean hasSearchQuery = search != null && !search.isEmpty();
+
+        if (hasStatusFilter && hasSearchQuery) {
+            return orderRepository.findByShippingStatusAndRecipientNameContainingIgnoreCaseOrShippingStatusAndOrderIdContaining(
+                    shippingStatus, search, shippingStatus, search, pageable);
+            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            // Đã sửa từ IdContaining sang OrderIdContaining
+        } else if (hasStatusFilter) {
+            return orderRepository.findByShippingStatus(shippingStatus, pageable);
+        } else if (hasSearchQuery) {
+            return orderRepository.findByRecipientNameContainingIgnoreCaseOrOrderIdContaining(search, search, pageable);
+            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            // Đã sửa từ IdContaining sang OrderIdContaining
+        } else {
+            return orderRepository.findAll(pageable);
+        }
+    }
+
     public static class DecreaseStockRequest {
         private int quantity;
 

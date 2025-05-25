@@ -17,4 +17,6 @@ public interface IOrderService {
     Page<Order> getAllOrders(int page, int size);
 
     Optional<Order> updateShippingStatus(String orderId, String shippingStatus);
+
+    Page<Order> getFilteredAndSearchedOrders(int page, int size, String shippingStatus, String search);
 }

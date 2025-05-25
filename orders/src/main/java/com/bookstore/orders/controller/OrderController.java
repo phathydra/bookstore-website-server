@@ -1,3 +1,4 @@
+// src/main/java/com/bookstore/orders/controller/OrderController.java
 package com.bookstore.orders.controller;
 
 import com.bookstore.orders.dto.OrderDto;
@@ -36,23 +37,27 @@ public class OrderController {
     // Get order by _id (orderId)
     @GetMapping("/orderId/{orderId}")
     public ResponseEntity<Order> getOrderById(@PathVariable String orderId) {
-        Optional<Order> order = orderService.getOrderById(orderId);  // Sử dụng Optional để tránh NullPointerException
+        Optional<Order> order = orderService.getOrderById(orderId);
         return order.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Get all orders
+    // --- CẬP NHẬT PHƯƠNG THỨC getAllOrders NÀY ---
     @GetMapping("")
-    public ResponseEntity<Page<Order>> getAllOrders(
+    public ResponseEntity<Page<Order>> getOrders(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String shippingStatus, // Thêm tham số này
+            @RequestParam(required = false) String search) { // Thêm tham số này
         try {
-            Page<Order> orders = orderService.getAllOrders(page, size);
+            Page<Order> orders = orderService.getFilteredAndSearchedOrders(page, size, shippingStatus, search);
             return ResponseEntity.ok(orders);
         } catch (Exception e) {
+            // Log lỗi để dễ dàng debug hơn
+            System.err.println("Error fetching filtered/searched orders: " + e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Page.empty());
+                    .body(Page.empty()); // Trả về Page rỗng nếu có lỗi
         }
     }
 
@@ -66,5 +71,4 @@ public class OrderController {
         return updatedOrder.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
 }
