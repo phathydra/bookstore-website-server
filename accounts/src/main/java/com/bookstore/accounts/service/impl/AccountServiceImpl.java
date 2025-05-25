@@ -193,7 +193,7 @@ public class AccountServiceImpl implements IAccountService {
         String upperCaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         String lowerCaseLetters = "abcdefghijklmnopqrstuvwxyz";
         String numbers = "0123456789";
-        String specialCharacters = "^&*-_=+;:',.<>";
+        String specialCharacters = "^&*-_=+;:',.";
         String allowedCharacters = upperCaseLetters + lowerCaseLetters + numbers + specialCharacters;
         Random random = new Random();
         StringBuilder password = new StringBuilder();
