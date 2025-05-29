@@ -1,5 +1,6 @@
 package com.bookstore.orders.service;
 
+import com.bookstore.orders.dto.BestSellingBookDto;
 import com.bookstore.orders.dto.OrderDto;
 import com.bookstore.orders.entity.Order;
 import org.springframework.data.domain.Page;
@@ -19,4 +20,7 @@ public interface IOrderService {
     Optional<Order> updateShippingStatus(String orderId, String shippingStatus);
 
     Page<Order> getFilteredAndSearchedOrders(int page, int size, String shippingStatus, String search);
+    List<BestSellingBookDto> getTop5BestSellingBooks();
+    List<BestSellingBookDto> getPurchasedBooksByAccountId(String accountId);
+
 }
