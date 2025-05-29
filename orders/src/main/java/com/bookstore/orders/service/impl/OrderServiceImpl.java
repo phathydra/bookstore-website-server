@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,6 +25,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.Optional;
+import com.bookstore.orders.dto.BestSellingBookDto;
+import org.bson.Document;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
+import org.springframework.data.domain.Sort;
+
+import java.util.stream.Collectors;
+
+
 
 @Service
 public class OrderServiceImpl implements IOrderService {
@@ -41,6 +51,9 @@ public class OrderServiceImpl implements IOrderService {
 
     @Value("${book-service.base-url}")
     private String bookServiceBaseUrl;
+
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
     @Override
     @Transactional
@@ -144,4 +157,54 @@ public class OrderServiceImpl implements IOrderService {
             this.quantity = quantity;
         }
     }
+
+    @Override
+    public List<BestSellingBookDto> getTop5BestSellingBooks() {
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("shippingStatus").nin("Chờ xử lý", "Đã hủy")),
+                Aggregation.unwind("orderItems"),
+                Aggregation.group("orderItems.bookId", "orderItems.bookName")
+                        .sum("orderItems.quantity").as("totalSold"),
+                Aggregation.sort(Sort.Direction.DESC, "totalSold"),
+                Aggregation.project()
+                        .and("_id.bookId").as("bookId")
+                        .and("_id.bookName").as("bookName")
+                        .and("totalSold").as("totalSold")
+        );
+
+        AggregationResults<BestSellingBookDto> results = mongoTemplate.aggregate(
+                aggregation,
+                "orders",
+                BestSellingBookDto.class
+        );
+
+        return results.getMappedResults();
+    }
+
+    @Override
+    public List<BestSellingBookDto> getPurchasedBooksByAccountId(String accountId) {
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("accountId").is(accountId)
+                        .and("shippingStatus").nin("Chờ xử lý", "Đã hủy")),
+
+                Aggregation.unwind("orderItems"),
+
+                Aggregation.group("orderItems.bookId", "orderItems.bookName")
+                        .sum("orderItems.quantity").as("totalSold"),
+
+                Aggregation.project()
+                        .and("_id.bookId").as("bookId")
+                        .and("_id.bookName").as("bookName")
+                        .and("totalSold").as("totalSold")
+        );
+
+        AggregationResults<BestSellingBookDto> results = mongoTemplate.aggregate(
+                aggregation,
+                "orders",
+                BestSellingBookDto.class
+        );
+
+        return results.getMappedResults();
+    }
+
 }

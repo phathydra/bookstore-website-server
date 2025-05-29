@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
+import com.bookstore.orders.dto.BestSellingBookDto;
 
 @CrossOrigin(origins = "http://localhost:3001, http://localhost:3000")
 @RestController
@@ -71,4 +72,17 @@ public class OrderController {
         return updatedOrder.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/top-selling")
+    public ResponseEntity<List<BestSellingBookDto>> getTopSellingBooks() {
+        List<BestSellingBookDto> topBooks = orderService.getTop5BestSellingBooks();
+        return ResponseEntity.ok(topBooks);
+    }
+
+    @GetMapping("/purchased-books/{accountId}")
+    public ResponseEntity<List<BestSellingBookDto>> getPurchasedBooks(@PathVariable String accountId) {
+        List<BestSellingBookDto> books = orderService.getPurchasedBooksByAccountId(accountId);
+        return ResponseEntity.ok(books);
+    }
+
 }
