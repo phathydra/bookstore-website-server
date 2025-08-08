@@ -3,7 +3,9 @@ package com.tlcn.books.service;
 import com.tlcn.books.dto.BookDiscountDto;
 import com.tlcn.books.dto.DiscountDto;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.List;
 
 public interface IDiscountService {
@@ -15,6 +17,8 @@ public interface IDiscountService {
     void createDiscount(DiscountDto discountDto);
 
     void addDiscountToBooks(List<String> bookIds, String disCountId);
+
+    void addDiscountToBooksUsingExcel(MultipartFile file, String discountId);
 
     void updateBookDiscount(String id, String newDiscountId);
 
@@ -29,4 +33,5 @@ public interface IDiscountService {
     List<BookDiscountDto> getBookDiscountsByDiscountId(String discountId);
 
     List<BookDiscountDto> getAllBookDiscounts();
+
 }
