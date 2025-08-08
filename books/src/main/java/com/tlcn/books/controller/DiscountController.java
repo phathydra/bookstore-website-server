@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
 import java.util.List;
@@ -82,6 +83,20 @@ public class DiscountController {
     public ResponseEntity<ResponseDto> addDiscountToBooks(@Valid @RequestBody List<String> bookIds, @RequestParam String discountId) {
         try {
             iDiscountService.addDiscountToBooks(bookIds, discountId);
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(new ResponseDto(BookConstants.STATUS_201, BookConstants.MESSAGE_201));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi máy chủ nội bộ: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/addDiscountToBooksExcel")
+    public ResponseEntity<ResponseDto> addDiscountToBooksExcel(@Valid @RequestBody MultipartFile inputFile, @RequestParam String discountId) {
+        try {
+            iDiscountService.addDiscountToBooksUsingExcel(inputFile, discountId);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
                     .body(new ResponseDto(BookConstants.STATUS_201, BookConstants.MESSAGE_201));

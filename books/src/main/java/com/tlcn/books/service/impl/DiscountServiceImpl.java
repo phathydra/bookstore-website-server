@@ -1,9 +1,14 @@
 package com.tlcn.books.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tlcn.books.dto.AppliedBookDto;
 import com.tlcn.books.dto.BookDiscountDto;
 import com.tlcn.books.dto.DiscountDto;
+import com.tlcn.books.entity.Book;
 import com.tlcn.books.entity.BookDiscount;
 import com.tlcn.books.entity.Discount;
+import com.tlcn.books.fileIO.ApplyDiscountExcelImporter;
 import com.tlcn.books.mapper.DiscountMapper;
 import com.tlcn.books.repository.BookDiscountRepository;
 import com.tlcn.books.repository.DiscountRepository;
@@ -13,7 +18,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 @Service
@@ -66,6 +74,31 @@ public class DiscountServiceImpl implements IDiscountService {
                 newBookDiscount.setDiscountId(discountId);
                 bookDiscountRepository.save(newBookDiscount);
             }
+        }
+    }
+
+    @Override
+    public void addDiscountToBooksUsingExcel(MultipartFile fileInput, String discountId){
+        try{
+            List<String> bookIds = ApplyDiscountExcelImporter.importAppliedBooks(fileInput.getInputStream());
+            List<BookDiscount> existBookDiscounts = bookDiscountRepository.findByDiscountId(discountId);
+            for(BookDiscount bookDiscount : existBookDiscounts){
+                if(!bookIds.contains(bookDiscount.getBookId())){
+                    bookDiscountRepository.deleteByBookIdAndDiscountId(bookDiscount.getBookId(), discountId);
+                }
+            }
+
+            for(String id : bookIds){
+                Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookId(id);
+                if(bookDiscount.isEmpty()){
+                    BookDiscount newBookDiscount = new BookDiscount();
+                    newBookDiscount.setBookId(id);
+                    newBookDiscount.setDiscountId(discountId);
+                    bookDiscountRepository.save(newBookDiscount);
+                }
+            }
+        } catch (IOException e){
+            e.printStackTrace();
         }
     }
 
