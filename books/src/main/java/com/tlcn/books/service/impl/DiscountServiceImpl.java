@@ -138,6 +138,7 @@ public class DiscountServiceImpl implements IDiscountService {
 
     @Override
     public void deleteDiscount(String id) {
+        bookDiscountRepository.deleteAllByDiscountId(id);
         discountRepository.deleteById(id);
     }
 

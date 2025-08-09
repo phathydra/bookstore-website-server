@@ -17,5 +17,7 @@ public interface BookDiscountRepository extends MongoRepository<BookDiscount, St
 
     void deleteByBookIdAndDiscountId(String bookId, String discountId);
 
+    void deleteAllByDiscountId(String discountId);
+
     List<BookDiscount> findAll();
 }
