@@ -1,7 +1,8 @@
 package com.tlcn.books.controller;
 
-import com.tlcn.books.Constants.BookConstants;
+import com.tlcn.books.constants.BookConstants;
 import com.tlcn.books.dto.BookDiscountDto;
+import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.DiscountDto;
 import com.tlcn.books.dto.ResponseDto;
 import com.tlcn.books.service.IDiscountService;
@@ -80,30 +81,30 @@ public class DiscountController {
     }
 
     @PutMapping("/addDiscountToBooks")
-    public ResponseEntity<ResponseDto> addDiscountToBooks(@Valid @RequestBody List<String> bookIds, @RequestParam String discountId) {
+    public ResponseEntity<List<BookDto>> addDiscountToBooks(@Valid @RequestBody List<String> bookIds, @RequestParam String discountId) {
         try {
-            iDiscountService.addDiscountToBooks(bookIds, discountId);
+            List<BookDto> bookDtos = iDiscountService.addDiscountToBooks(bookIds, discountId);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(new ResponseDto(BookConstants.STATUS_201, BookConstants.MESSAGE_201));
+                    .body(bookDtos);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi máy chủ nội bộ: " + e.getMessage()));
+                    .body(Collections.emptyList());
         }
     }
 
     @PutMapping("/addDiscountToBooksExcel")
-    public ResponseEntity<ResponseDto> addDiscountToBooksExcel(@Valid @RequestBody MultipartFile inputFile, @RequestParam String discountId) {
+    public ResponseEntity<List<BookDto>> addDiscountToBooksExcel(@RequestParam("file") MultipartFile inputFile, @RequestParam String discountId) {
         try {
-            iDiscountService.addDiscountToBooksUsingExcel(inputFile, discountId);
+            List<BookDto> bookDtos = iDiscountService.addDiscountToBooksUsingExcel(inputFile, discountId);
             return ResponseEntity
                     .status(HttpStatus.CREATED)
-                    .body(new ResponseDto(BookConstants.STATUS_201, BookConstants.MESSAGE_201));
+                    .body(bookDtos);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi máy chủ nội bộ: " + e.getMessage()));
+                    .body(Collections.emptyList());
         }
     }
 

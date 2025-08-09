@@ -1,6 +1,5 @@
 package com.tlcn.books.repository;
 
-import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.entity.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

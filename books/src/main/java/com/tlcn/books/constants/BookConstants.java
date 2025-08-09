@@ -1,4 +1,4 @@
-package com.tlcn.books.Constants;
+package com.tlcn.books.constants;
 
 public class BookConstants {
     public static final String STATUS_404 = "404";

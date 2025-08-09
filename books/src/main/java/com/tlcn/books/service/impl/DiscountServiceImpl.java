@@ -1,16 +1,16 @@
 package com.tlcn.books.service.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tlcn.books.dto.AppliedBookDto;
 import com.tlcn.books.dto.BookDiscountDto;
+import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.DiscountDto;
 import com.tlcn.books.entity.Book;
 import com.tlcn.books.entity.BookDiscount;
 import com.tlcn.books.entity.Discount;
 import com.tlcn.books.fileIO.ApplyDiscountExcelImporter;
+import com.tlcn.books.mapper.BookMapper;
 import com.tlcn.books.mapper.DiscountMapper;
 import com.tlcn.books.repository.BookDiscountRepository;
+import com.tlcn.books.repository.BookRepository;
 import com.tlcn.books.repository.DiscountRepository;
 import com.tlcn.books.service.IDiscountService;
 import lombok.AllArgsConstructor;
@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 @Service
@@ -30,6 +29,7 @@ public class DiscountServiceImpl implements IDiscountService {
 
     public final DiscountRepository discountRepository;
     public final BookDiscountRepository bookDiscountRepository;
+    public final BookRepository bookRepository;
 
     @Override
     public BookDiscountDto getDiscountByBookIdAndDiscountId(String bookId, String discountId) {
@@ -58,14 +58,14 @@ public class DiscountServiceImpl implements IDiscountService {
     }
 
     @Override
-    public void addDiscountToBooks(List<String> bookIds, String discountId) {
+    public List<BookDto> addDiscountToBooks(List<String> bookIds, String discountId) {
         List<BookDiscount> existBookDiscounts = bookDiscountRepository.findByDiscountId(discountId);
         for(BookDiscount bookDiscount : existBookDiscounts){
             if(!bookIds.contains(bookDiscount.getBookId())){
                 bookDiscountRepository.deleteByBookIdAndDiscountId(bookDiscount.getBookId(), discountId);
             }
         }
-
+        List<BookDto> alreadyHaveDiscountBooks = new ArrayList<>();
         for(String id : bookIds){
             Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookId(id);
             if(bookDiscount.isEmpty()){
@@ -74,31 +74,36 @@ public class DiscountServiceImpl implements IDiscountService {
                 newBookDiscount.setDiscountId(discountId);
                 bookDiscountRepository.save(newBookDiscount);
             }
+            else {
+                Optional<Book> book = bookRepository.findByBookId(id);
+                alreadyHaveDiscountBooks.add(BookMapper.mapToBookDto(book.get(), new BookDto()));
+            }
         }
+        return alreadyHaveDiscountBooks;
     }
 
     @Override
-    public void addDiscountToBooksUsingExcel(MultipartFile fileInput, String discountId){
-        try{
+    public List<BookDto> addDiscountToBooksUsingExcel(MultipartFile fileInput, String discountId) {
+        try {
             List<String> bookIds = ApplyDiscountExcelImporter.importAppliedBooks(fileInput.getInputStream());
             List<BookDiscount> existBookDiscounts = bookDiscountRepository.findByDiscountId(discountId);
-            for(BookDiscount bookDiscount : existBookDiscounts){
-                if(!bookIds.contains(bookDiscount.getBookId())){
+            for (BookDiscount bookDiscount : existBookDiscounts) {
+                if (!bookIds.contains(bookDiscount.getBookId())) {
                     bookDiscountRepository.deleteByBookIdAndDiscountId(bookDiscount.getBookId(), discountId);
                 }
             }
-
-            for(String id : bookIds){
+            List<BookDto> addedBook = new ArrayList<>();
+            for (String id : bookIds) {
                 Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookId(id);
-                if(bookDiscount.isEmpty()){
-                    BookDiscount newBookDiscount = new BookDiscount();
-                    newBookDiscount.setBookId(id);
-                    newBookDiscount.setDiscountId(discountId);
-                    bookDiscountRepository.save(newBookDiscount);
+                if (bookDiscount.isEmpty()) {
+                    Optional<Book> book = bookRepository.findByBookId(id);
+                    addedBook.add(BookMapper.mapToBookDto(book.get(), new BookDto()));
                 }
             }
-        } catch (IOException e){
+            return addedBook;
+        } catch (IOException e) {
             e.printStackTrace();
+            return Collections.emptyList();
         }
     }
 

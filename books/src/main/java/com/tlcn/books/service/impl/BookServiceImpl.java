@@ -1,9 +1,7 @@
 package com.tlcn.books.service.impl;
 
-import com.tlcn.books.dto.BookDiscountDto;
 import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
-import com.tlcn.books.dto.SearchCriteria;
 import com.tlcn.books.entity.Book;
 import com.tlcn.books.entity.BookDiscount;
 import com.tlcn.books.entity.Discount;
@@ -15,13 +13,17 @@ import com.tlcn.books.repository.BookRepository;
 import com.tlcn.books.repository.DiscountRepository;
 import com.tlcn.books.service.IBookService;
 import lombok.AllArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -195,6 +197,43 @@ public class BookServiceImpl implements IBookService {
                 .toList();
         List<Book> books = bookRepository.findAllById(bookIds);
         return books.stream().map(book -> BookMapper.mapToBookDto(book, new BookDto())).toList();
+    }
+
+    @Override
+    public ByteArrayInputStream exportDiscountedBooks(String discountId) throws IOException {
+        List<BookDiscount> bookDiscounts = bookDiscountRepository.findByDiscountId(discountId);
+        List<String> bookIds = bookDiscounts.stream()
+                .map(BookDiscount::getBookId)
+                .toList();
+        List<Book> discountedBooks = bookRepository.findAllById(bookIds);
+        try(Workbook workbook = new XSSFWorkbook();
+            ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Discounted books of " + discountId);
+
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();;
+            font.setBold(true);
+            headerCellStyle.setFont(font);
+
+            String[] headers = {"Book ID", "Book Name"};
+            for (int col = 0; col < headers.length; col++){
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers[col]);
+                cell.setCellStyle(headerCellStyle);
+            }
+
+            int rowIdx = 1;
+            for(Book book : discountedBooks){
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(book.getBookId());
+                row.createCell(1).setCellValue(book.getBookName());
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        }
     }
 
     @Override
