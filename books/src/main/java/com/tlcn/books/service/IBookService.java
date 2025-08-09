@@ -2,10 +2,10 @@ package com.tlcn.books.service;
 
 import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
-import com.tlcn.books.dto.SearchCriteria;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.List;
 
 public interface IBookService {
@@ -31,6 +31,8 @@ public interface IBookService {
     List<BookDto> getSearchRecommendedBooks(String bookName, List<String> excludedBooks);
 
     List<BookDto> getDiscountedBooks(String discountId);
+
+    ByteArrayInputStream exportDiscountedBooks(String discountId) throws IOException;
 
     Page<BookWithDiscountDto> getBooksByMainCategory(String mainCategory, int page, int size);
     Page<BookWithDiscountDto> getBooksByBookCategory(String bookCategory, int page, int size);

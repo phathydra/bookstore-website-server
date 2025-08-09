@@ -1,25 +1,27 @@
 package com.tlcn.books.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tlcn.books.Constants.BookConstants;
+import com.tlcn.books.constants.BookConstants;
 import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.dto.ResponseDto;
-import com.tlcn.books.dto.SearchCriteria;
 import com.tlcn.books.exception.ResourceNotFoundException;
 import com.tlcn.books.service.IBookService;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Collections;
 
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, exposedHeaders = "Content-Disposition")
 @RestController
 @RequestMapping(path = "/api/book", produces = {MediaType.APPLICATION_JSON_VALUE})
 public class BookController {
@@ -134,6 +136,23 @@ public class BookController {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/export_discounted_books")
+    public ResponseEntity<Resource> exportDiscountedBooks(@RequestParam String discountId){
+        try{
+            ByteArrayInputStream in = iBookService.exportDiscountedBooks(discountId);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=discounted_books.xlsx");
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
+                    .body(new InputStreamResource(in));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
         }
     }
 
