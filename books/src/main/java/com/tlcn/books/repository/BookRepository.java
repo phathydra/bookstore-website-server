@@ -1,6 +1,7 @@
 package com.tlcn.books.repository;
 
 import com.tlcn.books.entity.Book;
+import org.apache.poi.sl.draw.geom.GuideIf;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -13,7 +14,10 @@ import java.util.Optional;
 
 @Repository
 public interface BookRepository extends MongoRepository<Book, String> {
+
     Optional<Book> findByBookId(String bookId);
+
+    Page<Book> findByBookIdIn(List<String> bookIds, Pageable pageable);
 
     Page<Book> findAllBy(Pageable pageable);
 

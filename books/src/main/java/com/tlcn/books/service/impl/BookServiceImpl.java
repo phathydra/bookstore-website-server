@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -190,13 +192,44 @@ public class BookServiceImpl implements IBookService {
         return bookList.stream().map(book -> BookMapper.mapToBookDto(book, new BookDto())).toList();
     }
 
-    public List<BookDto> getDiscountedBooks(String discountId){
+    public List<BookDto> getDiscountedBooksAdmin(String discountId){
         List<BookDiscount> bookDiscounts = bookDiscountRepository.findByDiscountId(discountId);
         List<String> bookIds = bookDiscounts.stream()
                 .map(BookDiscount::getBookId)
                 .toList();
         List<Book> books = bookRepository.findAllById(bookIds);
         return books.stream().map(book -> BookMapper.mapToBookDto(book, new BookDto())).toList();
+    }
+
+    @Override
+    public Page<BookDto> getAllDiscountedBooks(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+
+        List<BookDiscount> bookDiscounts = bookDiscountRepository.findAll();
+        List<Discount> discounts = discountRepository.findAll();
+        List<String> availableDiscounts = new ArrayList<>();
+        LocalDate currDate = LocalDate.now();
+
+        for (Discount discount : discounts) {
+            LocalDate startDate = discount.getStartDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            LocalDate endDate = discount.getEndDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+
+            if ((startDate.isEqual(currDate) || startDate.isBefore(currDate)) &&
+                    (endDate.isEqual(currDate) || endDate.isAfter(currDate))) {
+                availableDiscounts.add(discount.getId());
+            }
+        }
+
+        List<String> bookIds = bookDiscounts.stream()
+                .filter(bookDiscount -> availableDiscounts.contains(bookDiscount.getDiscountId()))
+                .map(BookDiscount::getBookId)
+                .toList();
+        Page<Book> books = bookRepository.findByBookIdIn(bookIds, pageable);
+        return books.map(book -> BookMapper.mapToBookDto(book, new BookDto()));
     }
 
     @Override
