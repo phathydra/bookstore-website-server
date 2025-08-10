@@ -127,15 +127,27 @@ public class BookController {
         }
     }
 
-    @GetMapping("/discounted_books")
-    public ResponseEntity<List<BookDto>> getDiscountedBooks(@RequestParam String discountId){
+    @GetMapping("/discounted_books_admin")
+    public ResponseEntity<List<BookDto>> getDiscountedBooksAdmin(@RequestParam String discountId){
         try{
-            List<BookDto> books = iBookService.getDiscountedBooks(discountId);
+            List<BookDto> books = iBookService.getDiscountedBooksAdmin(discountId);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/discounted_books")
+    public ResponseEntity<Page<BookDto>> getAllDiscountedBooks(@RequestParam int page, @RequestParam int size){
+        try{
+            Page<BookDto> books = iBookService.getAllDiscountedBooks(page, size);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
         }
     }
 

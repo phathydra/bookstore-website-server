@@ -30,7 +30,9 @@ public interface IBookService {
 
     List<BookDto> getSearchRecommendedBooks(String bookName, List<String> excludedBooks);
 
-    List<BookDto> getDiscountedBooks(String discountId);
+    List<BookDto> getDiscountedBooksAdmin(String discountId);
+
+    Page<BookDto> getAllDiscountedBooks(int page, int size);
 
     ByteArrayInputStream exportDiscountedBooks(String discountId) throws IOException;
 
