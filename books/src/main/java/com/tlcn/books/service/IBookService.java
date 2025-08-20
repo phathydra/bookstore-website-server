@@ -3,6 +3,7 @@ package com.tlcn.books.service;
 import com.tlcn.books.dto.BookDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,4 +43,9 @@ public interface IBookService {
     void decreaseStock(String bookId, int quantity);
 
     void increaseStock(String bookId, int quantity);
+
+    ByteArrayInputStream exportAllBooks() throws IOException;
+
+    void importBooks(MultipartFile file) throws IOException;
+
 }

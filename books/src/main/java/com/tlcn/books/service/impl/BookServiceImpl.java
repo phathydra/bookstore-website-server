@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -363,4 +364,97 @@ public class BookServiceImpl implements IBookService {
         book.setBookStockQuantity(newStock);
         bookRepository.save(book);
     }
+
+    @Override
+    public ByteArrayInputStream exportAllBooks() throws IOException {
+        List<Book> books = bookRepository.findAll(); // Lấy toàn bộ sách từ DB
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("All Books");
+
+            // Tạo style cho header
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerCellStyle.setFont(font);
+
+            // Danh sách tiêu đề cột
+            String[] headers = {
+                    "Book ID", "Book Name", "Author", "Image", "Price", "Main Category",
+                    "Category", "Year", "Publisher", "Language", "Stock Quantity", "Supplier", "Description"
+            };
+
+            // Tạo header row
+            Row headerRow = sheet.createRow(0);
+            for (int col = 0; col < headers.length; col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers[col]);
+                cell.setCellStyle(headerCellStyle);
+            }
+
+            // Ghi dữ liệu sách
+            int rowIdx = 1;
+            for (Book book : books) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(book.getBookId());
+                row.createCell(1).setCellValue(book.getBookName());
+                row.createCell(2).setCellValue(book.getBookAuthor());
+                row.createCell(3).setCellValue(book.getBookImage());
+                row.createCell(4).setCellValue(book.getBookPrice());
+                row.createCell(5).setCellValue(book.getMainCategory());
+                row.createCell(6).setCellValue(book.getBookCategory());
+                row.createCell(7).setCellValue(book.getBookYearOfProduction());
+                row.createCell(8).setCellValue(book.getBookPublisher());
+                row.createCell(9).setCellValue(book.getBookLanguage());
+                row.createCell(10).setCellValue(book.getBookStockQuantity());
+                row.createCell(11).setCellValue(book.getBookSupplier());
+                row.createCell(12).setCellValue(book.getBookDescription());
+            }
+
+            // Tự động chỉnh độ rộng cột
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        }
+    }
+
+    @Override
+    public void importBooks(MultipartFile file) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+
+            List<Book> books = new ArrayList<>();
+
+            // Giả sử row 0 là header => đọc từ row 1
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                Book book = new Book();
+                book.setBookId(UUID.randomUUID().toString());
+                book.setBookName(row.getCell(0).getStringCellValue());
+                book.setBookAuthor(row.getCell(1).getStringCellValue());
+                book.setBookImage(row.getCell(2) != null ? row.getCell(2).getStringCellValue() : null);
+                book.setBookPrice(row.getCell(3).getNumericCellValue());
+                book.setMainCategory(row.getCell(4).getStringCellValue());
+                book.setBookCategory(row.getCell(5).getStringCellValue());
+                book.setBookYearOfProduction((int) row.getCell(6).getNumericCellValue());
+                book.setBookPublisher(row.getCell(7).getStringCellValue());
+                book.setBookLanguage(row.getCell(8).getStringCellValue());
+                book.setBookStockQuantity((int) row.getCell(9).getNumericCellValue());
+                book.setBookSupplier(row.getCell(10).getStringCellValue());
+                book.setBookDescription(row.getCell(11) != null ? row.getCell(11).getStringCellValue() : null);
+
+                books.add(book);
+            }
+
+            bookRepository.saveAll(books);
+        }
+    }
+
 }

@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -267,4 +268,31 @@ public class BookController {
             this.quantity = quantity;
         }
     }
+
+    @GetMapping("/export_books")
+    public ResponseEntity<Resource> exportBooks() {
+        try {
+            ByteArrayInputStream in = iBookService.exportAllBooks();
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=all_books.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(new InputStreamResource(in));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @PostMapping("/import")
+    public ResponseEntity<String> importBooks(@RequestParam("file") MultipartFile file) {
+        try {
+            iBookService.importBooks(file);
+            return ResponseEntity.ok("Import sách thành công!");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi khi import: " + e.getMessage());
+        }
+    }
+
 }
