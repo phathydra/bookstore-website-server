@@ -9,16 +9,23 @@ import com.bookstore.accounts.exception.UsernameAlreadyExistException;
 import com.bookstore.accounts.repository.AccountRepository;
 import com.bookstore.accounts.service.IAccountService;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.InputStreamResource;
+
 import lombok.AllArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -239,4 +246,32 @@ public class AccountController {
                     .body(new ResponseDto(AccountConstants.STATUS_400, "Incorrect old password"));
         }
     }
+
+    @GetMapping("/export_accounts")
+    public ResponseEntity<Resource> exportAccounts() throws IOException {
+        // gọi service để lấy file Excel dưới dạng ByteArrayInputStream
+        ByteArrayInputStream in = accountService.exportAccounts();
+
+        // gói vào InputStreamResource
+        InputStreamResource file = new InputStreamResource(in);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=accounts.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.ms-excel"))
+                .body(file);
+    }
+
+    @GetMapping("/export_informations")
+    public ResponseEntity<Resource> exportInformations() throws IOException {
+        AccountController informationService;
+        ByteArrayInputStream in = accountService.exportInformations();
+        InputStreamResource file = new InputStreamResource(in);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=informations.xlsx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
+
 }

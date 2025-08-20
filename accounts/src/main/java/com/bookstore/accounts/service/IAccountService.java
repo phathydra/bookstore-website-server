@@ -5,6 +5,9 @@ import com.bookstore.accounts.dto.InformationDto;
 import com.bookstore.accounts.entity.Account;
 import org.springframework.data.domain.Page;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
 public interface IAccountService {
     Account createAccount(AccountDto accountDto);
 
@@ -31,4 +34,8 @@ public interface IAccountService {
     void resetPasswordByEmail(String email);
 
     boolean changePassword(String accountId, String oldPassword, String newPassword);
+
+    ByteArrayInputStream exportAccounts() throws IOException;
+
+    ByteArrayInputStream exportInformations() throws IOException;
 }

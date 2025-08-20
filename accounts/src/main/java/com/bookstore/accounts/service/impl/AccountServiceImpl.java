@@ -15,9 +15,15 @@ import com.bookstore.accounts.service.IAccountService;
 import com.bookstore.accounts.service.IEmailService;
 import lombok.AllArgsConstructor;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -242,4 +248,101 @@ public class AccountServiceImpl implements IAccountService {
             return false; // Mật khẩu cũ không đúng
         }
     }
+
+    @Override
+    public ByteArrayInputStream exportAccounts() throws IOException {
+        List<Account> accounts = accountRepository.findAll();
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Accounts");
+
+            // Header
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerCellStyle.setFont(font);
+
+            String[] headers = {"Account ID", "Email", "Role", "Status"};
+            for (int col = 0; col < headers.length; col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers[col]);
+                cell.setCellStyle(headerCellStyle);
+            }
+
+            // Data rows
+            int rowIdx = 1;
+            for (Account account : accounts) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(account.getAccountId());
+                row.createCell(1).setCellValue(account.getEmail());
+                row.createCell(2).setCellValue(account.getRole() != null ? account.getRole() : "");
+                row.createCell(3).setCellValue(account.getStatus() != null ? account.getStatus() : "");
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        }
+    }
+
+    @Override
+    public ByteArrayInputStream exportInformations() throws IOException {
+        List<InformationDto> informations = informationRepository.findAll()
+                .stream()
+                .map(info -> {
+                    InformationDto dto = new InformationDto();
+                    dto.setId(info.getId());
+                    dto.setAccountId(info.getAccountId());
+                    dto.setName(info.getName());
+                    dto.setEmail(info.getEmail());
+                    dto.setPhone(info.getPhone());
+                    dto.setAddress(info.getAddress());
+                    dto.setAvatar(info.getAvatar());
+                    return dto;
+                }).toList();
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Informations");
+
+            // Header
+            Row headerRow = sheet.createRow(0);
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerCellStyle.setFont(font);
+
+            String[] headers = {"ID", "Account ID", "Name", "Email", "Phone", "Address", "Avatar"};
+            for (int col = 0; col < headers.length; col++) {
+                Cell cell = headerRow.createCell(col);
+                cell.setCellValue(headers[col]);
+                cell.setCellStyle(headerCellStyle);
+            }
+
+            // Data rows
+            int rowIdx = 1;
+            for (InformationDto info : informations) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(info.getId() != null ? info.getId() : "");
+                row.createCell(1).setCellValue(info.getAccountId() != null ? info.getAccountId() : "");
+                row.createCell(2).setCellValue(info.getName() != null ? info.getName() : "");
+                row.createCell(3).setCellValue(info.getEmail() != null ? info.getEmail() : "");
+                row.createCell(4).setCellValue(info.getPhone() != null ? info.getPhone() : "");
+                row.createCell(5).setCellValue(info.getAddress() != null ? info.getAddress() : "");
+                row.createCell(6).setCellValue(info.getAvatar() != null ? info.getAvatar() : "");
+            }
+
+            // Auto resize cột cho đẹp
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        }
+    }
+
 }
