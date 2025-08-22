@@ -57,7 +57,7 @@ public class BookServiceImpl implements IBookService {
         Book existingBook = optionalBook.get();
         existingBook.setBookName(bookDto.getBookName());
         existingBook.setBookAuthor(bookDto.getBookAuthor());
-        existingBook.setBookImage(bookDto.getBookImage());
+        existingBook.setBookImages(bookDto.getBookImages()); // sửa lại ở đây
         existingBook.setBookPrice(bookDto.getBookPrice());
         existingBook.setBookCategory(bookDto.getBookCategory());
         existingBook.setBookYearOfProduction(bookDto.getBookYearOfProduction());
@@ -69,6 +69,7 @@ public class BookServiceImpl implements IBookService {
 
         bookRepository.save(existingBook);
     }
+
 
     @Override
     public void deleteBook(String bookId) {
@@ -400,26 +401,23 @@ public class BookServiceImpl implements IBookService {
 
     @Override
     public ByteArrayInputStream exportAllBooks() throws IOException {
-        List<Book> books = bookRepository.findAll(); // Lấy toàn bộ sách từ DB
+        List<Book> books = bookRepository.findAll();
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("All Books");
 
-            // Tạo style cho header
             CellStyle headerCellStyle = workbook.createCellStyle();
             Font font = workbook.createFont();
             font.setBold(true);
             headerCellStyle.setFont(font);
 
-            // Danh sách tiêu đề cột
             String[] headers = {
-                    "Book ID", "Book Name", "Author", "Image", "Price", "Main Category",
+                    "Book ID", "Book Name", "Author", "Images", "Price", "Main Category",
                     "Category", "Year", "Publisher", "Language", "Stock Quantity", "Supplier", "Description"
             };
 
-            // Tạo header row
             Row headerRow = sheet.createRow(0);
             for (int col = 0; col < headers.length; col++) {
                 Cell cell = headerRow.createCell(col);
@@ -427,14 +425,15 @@ public class BookServiceImpl implements IBookService {
                 cell.setCellStyle(headerCellStyle);
             }
 
-            // Ghi dữ liệu sách
             int rowIdx = 1;
             for (Book book : books) {
                 Row row = sheet.createRow(rowIdx++);
                 row.createCell(0).setCellValue(book.getBookId());
                 row.createCell(1).setCellValue(book.getBookName());
                 row.createCell(2).setCellValue(book.getBookAuthor());
-                row.createCell(3).setCellValue(book.getBookImage());
+                row.createCell(3).setCellValue(
+                        book.getBookImages() != null ? String.join(";", book.getBookImages()) : ""
+                );
                 row.createCell(4).setCellValue(book.getBookPrice());
                 row.createCell(5).setCellValue(book.getMainCategory());
                 row.createCell(6).setCellValue(book.getBookCategory());
@@ -446,7 +445,6 @@ public class BookServiceImpl implements IBookService {
                 row.createCell(12).setCellValue(book.getBookDescription());
             }
 
-            // Tự động chỉnh độ rộng cột
             for (int i = 0; i < headers.length; i++) {
                 sheet.autoSizeColumn(i);
             }
@@ -463,7 +461,6 @@ public class BookServiceImpl implements IBookService {
 
             List<Book> books = new ArrayList<>();
 
-            // Giả sử row 0 là header => đọc từ row 1
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
@@ -472,7 +469,17 @@ public class BookServiceImpl implements IBookService {
                 book.setBookId(UUID.randomUUID().toString());
                 book.setBookName(row.getCell(0).getStringCellValue());
                 book.setBookAuthor(row.getCell(1).getStringCellValue());
-                book.setBookImage(row.getCell(2) != null ? row.getCell(2).getStringCellValue() : null);
+
+                // Nhiều ảnh, phân tách bằng ;
+                if (row.getCell(2) != null) {
+                    String imagesStr = row.getCell(2).getStringCellValue();
+                    List<String> images = Arrays.stream(imagesStr.split(";"))
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .toList();
+                    book.setBookImages(images);
+                }
+
                 book.setBookPrice(row.getCell(3).getNumericCellValue());
                 book.setMainCategory(row.getCell(4).getStringCellValue());
                 book.setBookCategory(row.getCell(5).getStringCellValue());
@@ -489,5 +496,4 @@ public class BookServiceImpl implements IBookService {
             bookRepository.saveAll(books);
         }
     }
-
 }

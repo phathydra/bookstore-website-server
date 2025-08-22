@@ -7,11 +7,10 @@ import com.tlcn.books.entity.Book;
 public class BookMapper {
     public static BookDto mapToBookDto(Book book, BookDto bookDto) {
 
-        // Gán giá trị từ Book sang BookDto
         bookDto.setBookId(book.getBookId());
         bookDto.setBookName(book.getBookName());
         bookDto.setBookAuthor(book.getBookAuthor());
-        bookDto.setBookImage(book.getBookImage());
+        bookDto.setBookImages(book.getBookImages()); // đổi sang List<String>
         bookDto.setBookPrice(book.getBookPrice());
         bookDto.setMainCategory(book.getMainCategory());
         bookDto.setBookCategory(book.getBookCategory());
@@ -22,7 +21,6 @@ public class BookMapper {
         bookDto.setBookSupplier(book.getBookSupplier());
         bookDto.setBookDescription(book.getBookDescription());
 
-        // Trả về đối tượng BookDto đã được map
         return bookDto;
     }
 
@@ -30,7 +28,7 @@ public class BookMapper {
         book.setBookId(bookDto.getBookId());
         book.setBookName(bookDto.getBookName());
         book.setBookAuthor(bookDto.getBookAuthor());
-        book.setBookImage(bookDto.getBookImage());
+        book.setBookImages(bookDto.getBookImages()); // đổi sang List<String>
         book.setBookPrice(bookDto.getBookPrice());
         book.setMainCategory(bookDto.getMainCategory());
         book.setBookCategory(bookDto.getBookCategory());
@@ -47,7 +45,7 @@ public class BookMapper {
         bookWithDiscountDto.setBookId(book.getBookId());
         bookWithDiscountDto.setBookName(book.getBookName());
         bookWithDiscountDto.setBookAuthor(book.getBookAuthor());
-        bookWithDiscountDto.setBookImage(book.getBookImage());
+        bookWithDiscountDto.setBookImages(book.getBookImages()); // đổi sang List<String>
         bookWithDiscountDto.setBookPrice(book.getBookPrice());
         bookWithDiscountDto.setMainCategory(book.getMainCategory());
         bookWithDiscountDto.setBookCategory(book.getBookCategory());
@@ -58,7 +56,6 @@ public class BookMapper {
         bookWithDiscountDto.setBookSupplier(book.getBookSupplier());
         bookWithDiscountDto.setBookDescription(book.getBookDescription());
 
-        // Trả về đối tượng BookDto đã được map
         return bookWithDiscountDto;
     }
 }

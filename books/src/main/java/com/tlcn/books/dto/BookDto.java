@@ -1,8 +1,8 @@
 package com.tlcn.books.dto;
 
 import jakarta.validation.constraints.*;
-
 import lombok.Data;
+import java.util.List;   // thêm dòng này
 
 @Data
 public class BookDto {
@@ -16,13 +16,13 @@ public class BookDto {
     @NotEmpty(message = "Tác giả không được để trống")
     private String bookAuthor;
 
-    private String bookImage;
+    private List<String> bookImages;  // đổi thành List<String>
 
     @Min(value = 0, message = "Giá sách phải lớn hơn hoặc bằng 0")
     private double bookPrice;
 
     @NotEmpty(message = "Danh mục chính không được để trống")
-    private String mainCategory; // Thêm danh mục chính
+    private String mainCategory;
 
     @NotEmpty(message = "Thể loại không được để trống")
     private String bookCategory;
@@ -46,4 +46,3 @@ public class BookDto {
 
     private String bookDescription;
 }
-

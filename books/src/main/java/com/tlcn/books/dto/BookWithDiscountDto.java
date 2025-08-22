@@ -1,10 +1,8 @@
 package com.tlcn.books.dto;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class BookWithDiscountDto {
@@ -17,13 +15,14 @@ public class BookWithDiscountDto {
     @NotEmpty(message = "Tác giả không được để trống")
     private String bookAuthor;
 
-    private String bookImage;
+    // 🔥 Sửa chỗ này: dùng List thay vì String
+    private List<String> bookImages;
 
     @Min(value = 0, message = "Giá sách phải lớn hơn hoặc bằng 0")
     private double bookPrice;
 
     @NotEmpty(message = "Danh mục chính không được để trống")
-    private String mainCategory; // Thêm danh mục chính
+    private String mainCategory;
 
     @NotEmpty(message = "Thể loại không được để trống")
     private String bookCategory;
