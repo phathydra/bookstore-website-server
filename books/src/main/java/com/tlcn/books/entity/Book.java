@@ -3,6 +3,7 @@ package com.tlcn.books.entity;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.*;
+import java.util.List;
 
 @Document(collection = "books")
 @Getter
@@ -19,7 +20,7 @@ public class Book {
 
     private String bookAuthor;
 
-    private String bookImage;
+    private List<String> bookImages;  // đổi từ String thành List<String>
 
     private Double bookPrice;
 
