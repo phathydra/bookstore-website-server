@@ -33,7 +33,7 @@ public interface IBookService {
 
     List<BookDto> getDiscountedBooksAdmin(String discountId);
 
-    Page<BookDto> getAllDiscountedBooks(int page, int size);
+    Page<BookWithDiscountDto> getAllDiscountedBooks(int page, int size);
 
     ByteArrayInputStream exportDiscountedBooks(String discountId) throws IOException;
 
