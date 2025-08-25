@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.Optional;
 import java.util.List;
 
@@ -16,4 +17,10 @@ public interface VoucherRepository extends MongoRepository<Voucher, String> {
     Optional<Voucher> getVoucherByCode(String code);
 
     List<Voucher> getAllByPublish(boolean publish);
+
+    Page<Voucher> findByEndDateBefore(Date now, Pageable pageable);
+
+    Page<Voucher> findByStartDateLessThanEqualAndEndDateGreaterThanEqual(Date now1, Date now2, Pageable pageable);
+
+    Page<Voucher> findByStartDateAfter(Date now, Pageable pageable);
 }

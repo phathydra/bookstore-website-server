@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,6 +43,30 @@ public class VoucherServiceImpl implements IVoucherService {
     public Page<VoucherDto> getAllVoucher(int page, int size, String code) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Voucher> vouchers = voucherRepository.findAllByCodeContainingIgnoreCaseOrderByEndDateDesc(pageable, code);
+        return vouchers.map(voucher -> VoucherMapper.toVoucherDto(voucher, new VoucherDto()));
+    }
+
+    @Override
+    public Page<VoucherDto> getExpiredVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<Voucher> vouchers = voucherRepository.findByEndDateBefore(now, pageable);
+        return vouchers.map(voucher -> VoucherMapper.toVoucherDto(voucher, new VoucherDto()));
+    }
+
+    @Override
+    public Page<VoucherDto> getActiveVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<Voucher> vouchers = voucherRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(now, now, pageable);
+        return vouchers.map(voucher -> VoucherMapper.toVoucherDto(voucher, new VoucherDto()));
+    }
+
+    @Override
+    public Page<VoucherDto> getUpcomingVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<Voucher> vouchers = voucherRepository.findByStartDateAfter(now, pageable);
         return vouchers.map(voucher -> VoucherMapper.toVoucherDto(voucher, new VoucherDto()));
     }
 
