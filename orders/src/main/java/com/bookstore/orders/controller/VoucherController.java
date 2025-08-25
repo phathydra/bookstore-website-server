@@ -27,6 +27,27 @@ public class VoucherController {
         return ResponseEntity.ok(voucherDtos);
     }
 
+    @GetMapping("expired")
+    public ResponseEntity<Page<VoucherDto>> getExpiredVoucher(@RequestParam(defaultValue = "0") int page,
+                                                              @RequestParam(defaultValue = "10") int size){
+        Page<VoucherDto> voucherDtos = iVoucherService.getExpiredVoucher(page, size);
+        return ResponseEntity.ok(voucherDtos);
+    }
+
+    @GetMapping("active")
+    public ResponseEntity<Page<VoucherDto>> getActiveVoucher(@RequestParam(defaultValue = "0") int page,
+                                                              @RequestParam(defaultValue = "10") int size){
+        Page<VoucherDto> voucherDtos = iVoucherService.getActiveVoucher(page, size);
+        return ResponseEntity.ok(voucherDtos);
+    }
+
+    @GetMapping("upcoming")
+    public ResponseEntity<Page<VoucherDto>> getUpcomingVoucher(@RequestParam(defaultValue = "0") int page,
+                                                              @RequestParam(defaultValue = "10") int size){
+        Page<VoucherDto> voucherDtos = iVoucherService.getUpcomingVoucher(page, size);
+        return ResponseEntity.ok(voucherDtos);
+    }
+
 
     // Obtainable voucher management for admin
     @GetMapping("/obtainable")

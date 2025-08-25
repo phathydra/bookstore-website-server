@@ -11,6 +11,12 @@ import java.util.List;
 public interface IVoucherService {
     Page<VoucherDto> getAllVoucher(int page, int size, String code);
 
+    Page<VoucherDto> getExpiredVoucher(int page, int size);
+
+    Page<VoucherDto> getActiveVoucher(int page, int size);
+
+    Page<VoucherDto> getUpcomingVoucher(int page, int size);
+
     Page<ObtainableVoucherDto> getAllObtainableVoucher(int page, int size);
 
     List<VoucherDto> getAllPublishVoucher(String userId);
