@@ -38,6 +38,45 @@ public class DiscountController {
         }
     }
 
+    @GetMapping("expired")
+    public ResponseEntity<Page<DiscountDto>> getExpiredDiscount(@RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<DiscountDto> discountDtos = iDiscountService.getExpiredDiscount(page, size);
+            return ResponseEntity.ok(discountDtos);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
+
+    @GetMapping("active")
+    public ResponseEntity<Page<DiscountDto>> getActiveDiscount(@RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<DiscountDto> discountDtos = iDiscountService.getActiveDiscount(page, size);
+            return ResponseEntity.ok(discountDtos);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
+
+    @GetMapping("upcoming")
+    public ResponseEntity<Page<DiscountDto>> getUpcomingDiscount(@RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<DiscountDto> discountDtos = iDiscountService.getUpcomingDiscount(page, size);
+            return ResponseEntity.ok(discountDtos);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
+
     @PostMapping("")
     public ResponseEntity<ResponseDto> createDiscount(@Valid @RequestBody DiscountDto discountDto){
         try {

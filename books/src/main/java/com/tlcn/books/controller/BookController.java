@@ -141,9 +141,9 @@ public class BookController {
     }
 
     @GetMapping("/discounted_books")
-    public ResponseEntity<Page<BookDto>> getAllDiscountedBooks(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<Page<BookWithDiscountDto>> getAllDiscountedBooks(@RequestParam int page, @RequestParam int size){
         try{
-            Page<BookDto> books = iBookService.getAllDiscountedBooks(page, size);
+            Page<BookWithDiscountDto> books = iBookService.getAllDiscountedBooks(page, size);
             return ResponseEntity.ok(books);
         } catch (Exception e) {
             return ResponseEntity

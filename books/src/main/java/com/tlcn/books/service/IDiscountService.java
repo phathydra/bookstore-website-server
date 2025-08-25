@@ -14,6 +14,12 @@ public interface IDiscountService {
 
     Page<DiscountDto> getAllDiscount(int page, int size);
 
+    Page<DiscountDto> getExpiredDiscount(int page, int size);
+
+    Page<DiscountDto> getActiveDiscount(int page, int size);
+
+    Page<DiscountDto> getUpcomingDiscount(int page, int size);
+
     void createDiscount(DiscountDto discountDto);
 
     List<BookDto> addDiscountToBooks(List<String> bookIds, String disCountId);

@@ -52,6 +52,30 @@ public class DiscountServiceImpl implements IDiscountService {
     }
 
     @Override
+    public Page<DiscountDto> getExpiredDiscount(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<Discount> discounts = discountRepository.findByEndDateBefore(now, pageable);
+        return discounts.map(discount -> DiscountMapper.mapToDiscountDto(discount, new DiscountDto()));
+    }
+
+    @Override
+    public Page<DiscountDto> getActiveDiscount(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<Discount> discounts = discountRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(now, now, pageable);
+        return discounts.map(discount -> DiscountMapper.mapToDiscountDto(discount, new DiscountDto()));
+    }
+
+    @Override
+    public Page<DiscountDto> getUpcomingDiscount(int page, int size){
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<Discount> discounts = discountRepository.findByStartDateAfter(now, pageable);
+        return discounts.map(discount -> DiscountMapper.mapToDiscountDto(discount, new DiscountDto()));
+    }
+
+    @Override
     public void createDiscount(DiscountDto discountDto) {
         Discount discount = DiscountMapper.mapToDiscount(discountDto, new Discount());
         discountRepository.save(discount);
