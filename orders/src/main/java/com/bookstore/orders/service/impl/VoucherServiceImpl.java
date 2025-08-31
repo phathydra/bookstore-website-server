@@ -14,10 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class VoucherServiceImpl implements IVoucherService {
@@ -105,32 +103,44 @@ public class VoucherServiceImpl implements IVoucherService {
 
     @Override
     public List<ObtainableVoucherDto> getAllPersonalVoucher(String accountId){
-        Optional<ObtainedVoucher> obtainedVoucher = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
-        if(obtainedVoucher.isPresent()){
-            List<String> codes = obtainedVoucher.get().getObtainedVouchers();
-            List<ObtainableVoucherDto> obtainableVoucherDtos = new ArrayList<>();
-            codes.forEach(code -> {
-                ObtainableVoucher voucher = obtainableVoucherRepository.getObtainableVoucherByCode(code)
-                        .orElseThrow(() -> new RuntimeException("Voucher not found: " + code));
-                obtainableVoucherDtos.add(VoucherMapper.toObtainableVoucherDto(voucher, new ObtainableVoucherDto()));
-            });
-            return  obtainableVoucherDtos;
+
+        List<ObtainedVoucher> obtainedVouchers = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
+        if(obtainedVouchers.isEmpty()){
+            return Collections.emptyList();
         }
-        else {
-            throw new RuntimeException("Dont have any vouchers");
+        Date now = new Date();
+        List<ObtainableVoucherDto> obtainableVoucherDtos = new ArrayList<>();
+        for(ObtainedVoucher voucher : obtainedVouchers){
+            Optional<ObtainableVoucher> tempV = obtainableVoucherRepository.findByCodeAndEndDateGreaterThanEqual(voucher.getCode(), now);
+            if(tempV.isPresent()){
+                ObtainableVoucherDto availableVoucher = VoucherMapper.toObtainableVoucherDto(tempV.get(), new ObtainableVoucherDto());
+                obtainableVoucherDtos.add(availableVoucher);
+            }
+            else{
+                obtainedVoucherRepository.deleteByAccountIdAndCode(accountId, voucher.getCode());
+            }
         }
+        return obtainableVoucherDtos;
     }
 
     @Override
-    public List<ObtainableVoucherDto> getAllPublicClaimableVoucher(String accountId){
-        Optional<ObtainedVoucher> obtainedVoucher = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
+    public List<ObtainableVoucherDto> getAllPublicClaimableVoucher(String accountId) {
+        List<ObtainedVoucher> obtainedVouchers = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
         List<ObtainableVoucher> obtainableVouchers = obtainableVoucherRepository.getObtainableVoucherByPublicClaimable(true);
-        if(obtainedVoucher.isPresent()){
-            List<String> ownedVoucherCodes = obtainedVoucher.get().getObtainedVouchers();
-            obtainableVouchers.removeIf(voucher -> ownedVoucherCodes.contains(voucher.getCode()));
+
+        if (!obtainedVouchers.isEmpty()) {
+            Set<String> ownedVoucherCodes = obtainedVouchers.stream()
+                    .map(ObtainedVoucher::getCode)
+                    .collect(Collectors.toSet());
+            obtainableVouchers.removeIf(v -> ownedVoucherCodes.contains(v.getCode()));
         }
-        return obtainableVouchers.stream().map(voucher -> VoucherMapper.toObtainableVoucherDto(voucher, new ObtainableVoucherDto())).toList();
+
+        // 5. Map remaining vouchers to DTO
+        return obtainableVouchers.stream()
+                .map(v -> VoucherMapper.toObtainableVoucherDto(v, new ObtainableVoucherDto()))
+                .toList();
     }
+
 
     @Override
     public List<ObtainableVoucherDto> automaticallyObtainVoucher(String orderId){
@@ -145,16 +155,20 @@ public class VoucherServiceImpl implements IVoucherService {
             }
         }
         if(!claimableVouchers.isEmpty()){
-            Optional<ObtainedVoucher> existed = obtainedVoucherRepository.getObtainedVoucherByAccountId(placedOrder.get().getAccountId());
-            if(existed.isPresent()){
-                existed.get().getObtainedVouchers().addAll(claimableVouchers.stream().map(voucher -> voucher.getCode()).toList());
-                obtainedVoucherRepository.save(existed.get());
-            }
-            else {
-                ObtainedVoucher obtainedVoucher = new ObtainedVoucher();
-                obtainedVoucher.setAccountId(placedOrder.get().getAccountId());
-                obtainedVoucher.setObtainedVouchers(claimableVouchers.stream().map(voucher -> voucher.getCode()).toList());
-                obtainedVoucherRepository.save(obtainedVoucher);
+            List<ObtainedVoucher> existed = obtainedVoucherRepository.getObtainedVoucherByAccountId(placedOrder.get().getAccountId());
+            for(ObtainableVoucherDto curr : claimableVouchers){
+                Optional<ObtainedVoucher> obtainedVoucher = obtainedVoucherRepository.findByCode(curr.getCode());
+                if(obtainedVoucher.isPresent()){
+                    obtainedVoucher.get().setCount(obtainedVoucher.get().getCount() + 1);
+                    obtainedVoucherRepository.save(obtainedVoucher.get());
+                }
+                else{
+                    ObtainedVoucher newVoucher = new ObtainedVoucher();
+                    newVoucher.setAccountId(placedOrder.get().getAccountId());
+                    newVoucher.setCode(curr.getCode());
+                    newVoucher.setCount(1);
+                    obtainedVoucherRepository.save(newVoucher);
+                }
             }
         }
         return claimableVouchers;
@@ -243,18 +257,17 @@ public class VoucherServiceImpl implements IVoucherService {
 
     @Override
     public void claimVoucher(String accountId, ObtainableVoucherDto obtainableVoucherDto){
-        Optional<ObtainedVoucher> oldVouchers = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
+        Optional<ObtainedVoucher> oldVouchers = obtainedVoucherRepository.findByCode(obtainableVoucherDto.getCode());
         if(oldVouchers.isPresent()){
-            oldVouchers.get().getObtainedVouchers().add(obtainableVoucherDto.getCode());
+            oldVouchers.get().setCount(oldVouchers.get().getCount() + 1);
             obtainedVoucherRepository.save(oldVouchers.get());
         }
         else {
-            ObtainedVoucher obtainedVoucher = new ObtainedVoucher();
-            obtainedVoucher.setAccountId(accountId);
-            List<String> obtainedVoucherCodes = new ArrayList<>();
-            obtainedVoucherCodes.add(obtainableVoucherDto.getCode());
-            obtainedVoucher.setObtainedVouchers(obtainedVoucherCodes);
-            obtainedVoucherRepository.save(obtainedVoucher);
+            ObtainedVoucher newVoucher = new ObtainedVoucher();
+            newVoucher.setAccountId(accountId);
+            newVoucher.setCode(obtainableVoucherDto.getCode());
+            newVoucher.setCount(1);
+            obtainedVoucherRepository.save(newVoucher);
         }
     }
 

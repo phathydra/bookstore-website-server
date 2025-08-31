@@ -19,5 +19,7 @@ public class ObtainedVoucher{
 
     private String accountId;
 
-    private List<String> obtainedVouchers;
+    private String code;
+
+    private Integer count;
 }
