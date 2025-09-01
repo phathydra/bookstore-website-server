@@ -281,21 +281,6 @@ public class BookController {
         }
     }
 
-    @GetMapping("/export_books")
-    public ResponseEntity<Resource> exportBooks() {
-        try {
-            ByteArrayInputStream in = iBookService.exportAllBooks();
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Disposition", "attachment; filename=all_books.xlsx");
-
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                    .body(new InputStreamResource(in));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
     @PostMapping("/import")
     public ResponseEntity<String> importBooks(@RequestParam("file") MultipartFile file) {
         try {
@@ -307,4 +292,59 @@ public class BookController {
         }
     }
 
+    @GetMapping("/export_books")
+    public ResponseEntity<Resource> exportBooks(@RequestParam(defaultValue = "all") String filter) {
+        try {
+            ByteArrayInputStream in;
+
+            switch (filter) {
+                case "in-stock":
+                    in = iBookService.exportBooksInStock();
+                    break;
+                case "out-of-stock":
+                    in = iBookService.exportBooksOutOfStock();
+                    break;
+                default:
+                    in = iBookService.exportAllBooks();
+                    break;
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=books.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.parseMediaType(
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(new InputStreamResource(in));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/out-of-stock")
+    public ResponseEntity<Page<BookWithDiscountDto>> getOutOfStockBooks(@RequestParam(defaultValue = "0") int page,
+                                                                        @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<BookWithDiscountDto> books = iBookService.getBooksByStockQuantity(0, page, size);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
+
+    @GetMapping("/in-stock")
+    public ResponseEntity<Page<BookWithDiscountDto>> getInStockBooks(@RequestParam(defaultValue = "0") int page,
+                                                                     @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<BookWithDiscountDto> books = iBookService.getBooksInStock(page, size);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
 }
