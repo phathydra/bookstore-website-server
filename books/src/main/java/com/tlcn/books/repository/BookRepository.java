@@ -62,5 +62,10 @@ public interface BookRepository extends MongoRepository<Book, String> {
 
     Page<Book> findByBookAuthorContainingIgnoreCaseAndBookPriceBetween(
             String bookAuthor, double minPrice, double maxPrice, Pageable pageable);
+
+    Page<Book> findByBookStockQuantity(int bookStockQuantity, Pageable pageable);
+
+    Page<Book> findByBookStockQuantityGreaterThan(int bookStockQuantity, Pageable pageable);
+
 }
 

@@ -510,4 +510,97 @@ public class BookServiceImpl implements IBookService {
             bookRepository.saveAll(books);
         }
     }
+
+    @Override
+    public Page<BookWithDiscountDto> getBooksByStockQuantity(int quantity, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> books = bookRepository.findByBookStockQuantity(quantity, pageable);
+        return books.map(this::mapBookToBookWithDiscountDto);
+    }
+
+    @Override
+    public Page<BookWithDiscountDto> getBooksInStock(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> books = bookRepository.findByBookStockQuantityGreaterThan(0, pageable);
+        return books.map(this::mapBookToBookWithDiscountDto);
+    }
+
+    // Tạo một phương thức private để tái sử dụng logic tính toán chiết khấu
+    private BookWithDiscountDto mapBookToBookWithDiscountDto(Book book) {
+        BookWithDiscountDto bookWithDiscount = BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
+        Optional<BookDiscount> bookDiscount = bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
+        if (bookDiscount.isPresent()) {
+            Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
+            discount.ifPresent(d -> {
+                bookWithDiscount.setPercentage(d.getPercentage());
+                double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - d.getPercentage() / (double) 100));
+                bookWithDiscount.setDiscountedPrice(discountedPrice);
+            });
+        }
+        return bookWithDiscount;
+    }
+    @Override
+    public ByteArrayInputStream exportBooksInStock() throws IOException {
+        List<Book> books = bookRepository.findByBookStockQuantityGreaterThan(0, Pageable.unpaged()).getContent();
+        return exportBooksToExcel(books);
+    }
+
+    @Override
+    public ByteArrayInputStream exportBooksOutOfStock() throws IOException {
+        List<Book> books = bookRepository.findByBookStockQuantity(0, Pageable.unpaged()).getContent();
+        return exportBooksToExcel(books);
+    }
+
+    // tái sử dụng logic xuất Excel
+    private ByteArrayInputStream exportBooksToExcel(List<Book> books) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Books");
+            String[] headers = {
+                    "Book ID", "Book Name", "Author", "Images", "Price", "Main Category",
+                    "Category", "Year", "Publisher", "Language", "Stock Quantity", "Supplier", "Description"
+            };
+
+            Font font = workbook.createFont();
+            font.setBold(true);
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            headerCellStyle.setFont(font);
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerCellStyle);
+            }
+
+            int rowIdx = 1;
+            for (Book book : books) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(book.getBookId());
+                row.createCell(1).setCellValue(book.getBookName());
+                row.createCell(2).setCellValue(book.getBookAuthor());
+                row.createCell(3).setCellValue(
+                        book.getBookImages() != null ? String.join(";", book.getBookImages()) : ""
+                );
+                row.createCell(4).setCellValue(book.getBookPrice());
+                row.createCell(5).setCellValue(book.getMainCategory());
+                row.createCell(6).setCellValue(book.getBookCategory());
+                row.createCell(7).setCellValue(book.getBookYearOfProduction());
+                row.createCell(8).setCellValue(book.getBookPublisher());
+                row.createCell(9).setCellValue(book.getBookLanguage());
+                row.createCell(10).setCellValue(book.getBookStockQuantity());
+                row.createCell(11).setCellValue(book.getBookSupplier());
+                row.createCell(12).setCellValue(book.getBookDescription());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        }
+    }
+
 }

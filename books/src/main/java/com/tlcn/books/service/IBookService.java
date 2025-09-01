@@ -50,4 +50,11 @@ public interface IBookService {
 
     void importBooks(MultipartFile file) throws IOException;
 
+    Page<BookWithDiscountDto> getBooksByStockQuantity(int quantity, int page, int size);
+
+    Page<BookWithDiscountDto> getBooksInStock(int page, int size);
+
+    ByteArrayInputStream exportBooksInStock() throws IOException;
+    ByteArrayInputStream exportBooksOutOfStock() throws IOException;
+
 }
