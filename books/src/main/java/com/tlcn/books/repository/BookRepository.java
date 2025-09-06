@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Repository
 public interface BookRepository extends MongoRepository<Book, String> {
@@ -38,6 +39,44 @@ public interface BookRepository extends MongoRepository<Book, String> {
     Page<Book> findByMainCategory(String mainCategory, Pageable pageable);
 
     Page<Book> findByBookCategory(String bookCategory, Pageable pageable);
+
+    @Query("{" +
+            " 'bookAuthor': { $regex: ?0, $options: 'i' }, " +
+            " 'mainCategory': { $in: ?1 }, " +
+            " 'bookCategory': { $in: ?2 }, " +
+            " 'bookPublisher': { $in: ?3 }, " +
+            " 'bookSupplier': { $in: ?4 }, " +
+            " 'bookPrice': { $gte: ?5, $lte: ?6 } " +
+            "}")
+    Page<Book> filterBooksByAll(
+            String bookAuthorRegex,
+            List<Pattern> mainCategories,
+            List<Pattern> bookCategories,
+            List<Pattern> publishers,
+            List<Pattern> suppliers,
+            double minPrice,
+            double maxPrice,
+            Pageable pageable
+    );
+
+    @Query("{" +
+            " 'bookAuthor': { $regex: ?0, $options: 'i' }, " +
+            " 'mainCategory': { $in: ?1 }, " +
+            " 'bookPublisher': { $in: ?2 }, " +
+            " 'bookSupplier': { $in: ?3 }, " +
+            " 'bookPrice': { $gte: ?4, $lte: ?5 } " +
+            "}")
+    Page<Book> filterBooksByAllNoSubCategory(
+            String bookAuthorRegex,
+            List<Pattern> mainCategories,
+            List<Pattern> publishers,
+            List<Pattern> suppliers,
+            double minPrice,
+            double maxPrice,
+            Pageable pageable
+    );
+
+
 
     Page<Book> findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookPublisherInAndBookSupplierIn(
             String bookAuthor, List<String> mainCategory, double minPrice, double maxPrice, List<String> bookPublisher, List<String> bookSupplier, Pageable pageable);

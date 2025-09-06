@@ -1,6 +1,7 @@
 package com.tlcn.books.service;
 
 import com.tlcn.books.dto.BookDto;
+import com.tlcn.books.dto.BookFilterInputDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,7 +41,7 @@ public interface IBookService {
     Page<BookWithDiscountDto> getBooksByMainCategory(String mainCategory, int page, int size);
     Page<BookWithDiscountDto> getBooksByBookCategory(String bookCategory, int page, int size);
 
-    Page<BookWithDiscountDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size);
+    Page<BookWithDiscountDto> filterBooks(BookFilterInputDto input, int page, int size);
 
     void decreaseStock(String bookId, int quantity);
 

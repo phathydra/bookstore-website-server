@@ -2,6 +2,7 @@ package com.tlcn.books.controller;
 
 import com.tlcn.books.constants.BookConstants;
 import com.tlcn.books.dto.BookDto;
+import com.tlcn.books.dto.BookFilterInputDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.dto.ResponseDto;
 import com.tlcn.books.exception.ResourceNotFoundException;
@@ -203,18 +204,13 @@ public class BookController {
         }
     }
 
-    @GetMapping("/filter")
+    @PostMapping("/filter")
     public ResponseEntity<Page<BookWithDiscountDto>> filterBooks(
-            @RequestParam(required = false, defaultValue = "") String bookAuthor,
-            @RequestParam(required = false) List<String> mainCategory,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) List<String> bookPublisher, // Thay đổi thành List<String>
-            @RequestParam(required = false) List<String> bookSupplier,  // Thay đổi thành List<String>
+            @Valid @RequestBody BookFilterInputDto input,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        Page<BookWithDiscountDto> books = iBookService.filterBooks(bookAuthor, mainCategory, minPrice, maxPrice, bookPublisher, bookSupplier, page, size);
+        Page<BookWithDiscountDto> books = iBookService.filterBooks(input, page, size);
         return new ResponseEntity<>(books, HttpStatus.OK);
     }
 

@@ -1,6 +1,7 @@
 package com.tlcn.books.service.impl;
 
 import com.tlcn.books.dto.BookDto;
+import com.tlcn.books.dto.BookFilterInputDto;
 import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.entity.Book;
 import com.tlcn.books.entity.BookDiscount;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -327,55 +329,76 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public Page<BookWithDiscountDto> filterBooks(String bookAuthor, List<String> mainCategory, Double minPrice, Double maxPrice, List<String> bookPublisher, List<String> bookSupplier, int page, int size) {
+    public Page<BookWithDiscountDto> filterBooks(
+            BookFilterInputDto input,
+            int page,
+            int size) {
+
         Pageable pageable = PageRequest.of(page, size);
-        double min = (minPrice != null) ? minPrice : 0;
-        double max = (maxPrice != null) ? maxPrice : Double.MAX_VALUE;
+        double min = (input.getMinPrice() != null) ? input.getMinPrice() : 0;
+        double max = (input.getMaxPrice() != null) ? input.getMaxPrice() : Double.MAX_VALUE;
+
+        // normalize regex for author
+        String authorRegex = (input.getBookAuthor() == null || input.getBookAuthor().isBlank()) ? ".*" : input.getBookAuthor();
+
+        // normalize lists
+        List<Pattern> mainCategoryPatterns = normalizeToPatterns(input.getMainCategory());
+        List<Pattern> subCategoryPatterns = normalizeToPatterns(input.getBookCategory());
+        List<Pattern> publisherPatterns = normalizeToPatterns(input.getBookPublisher());
+        List<Pattern> supplierPatterns = normalizeToPatterns(input.getBookSupplier());
 
         Page<Book> books;
 
-        if (mainCategory != null && !mainCategory.isEmpty() && bookPublisher != null && !bookPublisher.isEmpty() && bookSupplier != null && !bookSupplier.isEmpty()) {
-            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookPublisherInAndBookSupplierIn(
-                    bookAuthor, mainCategory, min, max, bookPublisher, bookSupplier, pageable);
-        } else if (mainCategory != null && !mainCategory.isEmpty() && bookPublisher != null && !bookPublisher.isEmpty()) {
-            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookPublisherIn(
-                    bookAuthor, mainCategory, min, max, bookPublisher, pageable);
-        } else if (mainCategory != null && !mainCategory.isEmpty() && bookSupplier != null && !bookSupplier.isEmpty()) {
-            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetweenAndBookSupplierIn(
-                    bookAuthor, mainCategory, min, max, bookSupplier, pageable);
-        } else if (bookPublisher != null && !bookPublisher.isEmpty() && bookSupplier != null && !bookSupplier.isEmpty()) {
-            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookPublisherInAndBookSupplierIn(
-                    bookAuthor, min, max, bookPublisher, bookSupplier, pageable);
-        } else if (mainCategory != null && !mainCategory.isEmpty()) {
-            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndMainCategoryInAndBookPriceBetween(
-                    bookAuthor, mainCategory, min, max, pageable);
-        } else if (bookPublisher != null && !bookPublisher.isEmpty()) {
-            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookPublisherIn(
-                    bookAuthor, min, max, bookPublisher, pageable);
-        } else if (bookSupplier != null && !bookSupplier.isEmpty()) {
-            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndBookPriceBetweenAndBookSupplierIn(
-                    bookAuthor, min, max, bookSupplier, pageable);
-        } else {
-            books = bookRepository.findByBookAuthorContainingIgnoreCaseAndBookPriceBetween(
-                    bookAuthor, min, max, pageable);
+        if(input.getBookCategory().isEmpty() || input.getBookCategory() == null){
+            books = bookRepository.filterBooksByAllNoSubCategory(
+                    authorRegex,
+                    mainCategoryPatterns,
+                    publisherPatterns,
+                    supplierPatterns,
+                    min,
+                    max,
+                    pageable
+            );
+        }
+        else{
+            books = bookRepository.filterBooksByAll(
+                    authorRegex,
+                    mainCategoryPatterns,
+                    subCategoryPatterns,
+                    publisherPatterns,
+                    supplierPatterns,
+                    min,
+                    max,
+                    pageable
+            );
         }
 
-        Page<BookWithDiscountDto> bookWithDiscountDto =
-                books.map(book -> {
-                    BookWithDiscountDto bookWithDiscount =
-                            BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
-                    Optional<BookDiscount> bookDiscount =
-                            bookDiscountRepository.findByBookId(bookWithDiscount.getBookId());
-                    if(bookDiscount.isPresent()){
-                        Optional<Discount> discount = discountRepository.findById(bookDiscount.get().getDiscountId());
-                        bookWithDiscount.setPercentage(discount.get().getPercentage());
-                        double discountedPrice = Math.ceil(bookWithDiscount.getBookPrice() * (1 - bookWithDiscount.getPercentage() / (double)100));
-                        bookWithDiscount.setDiscountedPrice(discountedPrice);
-                    }
-                    return bookWithDiscount;
+        return books.map(book -> {
+            BookWithDiscountDto dto = BookMapper.mapToBookWithDiscountDto(book, new BookWithDiscountDto());
+
+            bookDiscountRepository.findByBookId(dto.getBookId()).ifPresent(bookDiscount -> {
+                discountRepository.findById(bookDiscount.getDiscountId()).ifPresent(discount -> {
+                    dto.setPercentage(discount.getPercentage());
+                    double discountedPrice = Math.ceil(
+                            dto.getBookPrice() * (1 - dto.getPercentage() / 100.0)
+                    );
+                    dto.setDiscountedPrice(discountedPrice);
                 });
-        return bookWithDiscountDto;
+            });
+
+            return dto;
+        });
     }
+
+    private List<Pattern> normalizeToPatterns(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of(Pattern.compile(".*", Pattern.CASE_INSENSITIVE));
+        }
+        return values.stream()
+                .map(v -> Pattern.compile(v, Pattern.CASE_INSENSITIVE))
+                .toList();
+    }
+
 
     @Override
     @Transactional
