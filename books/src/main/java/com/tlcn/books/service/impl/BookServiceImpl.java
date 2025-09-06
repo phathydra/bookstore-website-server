@@ -40,6 +40,20 @@ public class BookServiceImpl implements IBookService {
     private final BookDiscountRepository bookDiscountRepository;
     private final DiscountRepository discountRepository;
 
+    private static final Map<String, List<String>> MAIN_CATEGORIES = new HashMap<>();
+
+    static {
+        MAIN_CATEGORIES.put("Văn Học", List.of("Tiểu thuyết", "Truyện ngắn", "Thơ ca", "Kịch", "Ngụ ngôn"));
+        MAIN_CATEGORIES.put("Giáo Dục & Học Thuật", List.of("Sách giáo khoa", "Sách tham khảo", "Ngoại ngữ", "Sách khoa học"));
+        MAIN_CATEGORIES.put("Kinh Doanh & Phát Triển Bản Thân", List.of("Quản trị", "Tài chính", "Khởi nghiệp", "Lãnh đạo", "Kỹ năng sống"));
+        MAIN_CATEGORIES.put("Khoa Học & Công Nghệ", List.of("Vật lý", "Hóa học", "Sinh học", "Công nghệ", "Lập trình"));
+        MAIN_CATEGORIES.put("Lịch Sử & Địa Lý", List.of("Lịch sử thế giới", "Lịch sử Việt Nam", "Địa lý"));
+        MAIN_CATEGORIES.put("Tôn Giáo & Triết Học", List.of("Phật giáo", "Thiên Chúa giáo", "Hồi giáo", "Triết học"));
+        MAIN_CATEGORIES.put("Sách Thiếu Nhi", List.of("Truyện cổ tích", "Truyện tranh", "Sách giáo dục trẻ em"));
+        MAIN_CATEGORIES.put("Văn Hóa & Xã Hội", List.of("Du lịch", "Nghệ thuật", "Tâm lý - xã hội"));
+        MAIN_CATEGORIES.put("Sức Khỏe & Ẩm Thực", List.of("Nấu ăn", "Dinh dưỡng", "Thể dục - thể thao"));
+    }
+
     @Override
     public void createBook(BookDto bookDto) {
         Book book = BookMapper.mapToBook(bookDto, new Book());
@@ -338,12 +352,12 @@ public class BookServiceImpl implements IBookService {
         double min = (input.getMinPrice() != null) ? input.getMinPrice() : 0;
         double max = (input.getMaxPrice() != null) ? input.getMaxPrice() : Double.MAX_VALUE;
 
-        // normalize regex for author
         String authorRegex = (input.getBookAuthor() == null || input.getBookAuthor().isBlank()) ? ".*" : input.getBookAuthor();
 
-        // normalize lists
-        List<Pattern> mainCategoryPatterns = normalizeToPatterns(input.getMainCategory());
-        List<Pattern> subCategoryPatterns = normalizeToPatterns(input.getBookCategory());
+        FilteredCategories filtered = processCategories(input.getMainCategory(), input.getBookCategory());
+
+        List<Pattern> mainCategoryPatterns = normalizeToPatterns(filtered.main());
+        List<Pattern> subCategoryPatterns  = normalizeToPatterns(filtered.sub());
         List<Pattern> publisherPatterns = normalizeToPatterns(input.getBookPublisher());
         List<Pattern> supplierPatterns = normalizeToPatterns(input.getBookSupplier());
 
@@ -389,6 +403,28 @@ public class BookServiceImpl implements IBookService {
             return dto;
         });
     }
+
+    private FilteredCategories processCategories(List<String> mainCategories, List<String> subCategories) {
+        if (mainCategories == null) mainCategories = new ArrayList<>();
+        if (subCategories == null) subCategories = new ArrayList<>();
+
+        Set<String> mainCopy = new HashSet<>(mainCategories);
+
+        for (Map.Entry<String, List<String>> entry : MAIN_CATEGORIES.entrySet()) {
+            String main = entry.getKey();
+            List<String> subs = entry.getValue();
+
+            // if any subcategory of this main is selected -> remove the main
+            boolean subChosen = subCategories.stream().anyMatch(subs::contains);
+            if (subChosen) {
+                mainCopy.remove(main);
+            }
+        }
+
+        return new FilteredCategories(new ArrayList<>(mainCopy), subCategories);
+    }
+
+    private record FilteredCategories(List<String> main, List<String> sub) {}
 
     private List<Pattern> normalizeToPatterns(List<String> values) {
         if (values == null || values.isEmpty()) {
