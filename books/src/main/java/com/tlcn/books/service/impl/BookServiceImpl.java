@@ -150,43 +150,53 @@ public class BookServiceImpl implements IBookService {
     @Override
     public List<BookDto> getRecommendedBooks(String bookId) {
         Optional<Book> optionalBook = bookRepository.findById(bookId);
-        if (optionalBook.isEmpty()) {
-            throw new ResourceNotFoundException("Không tìm thấy sách với ID: " + bookId);
-        }
-
-        Book book = optionalBook.get();
-
-        List<Book> booksByCategory = bookRepository.findTop5ByMainCategoryAndBookIdNot(book.getMainCategory(), bookId);
-
-        List<Book> booksByAuthor = bookRepository.findTop5ByBookAuthorAndBookIdNot(book.getBookAuthor(), bookId);
 
         List<Book> recommendedBooks = new ArrayList<>();
 
-        // Thêm sách theo thể loại và tác giả
-        for (Book b : booksByCategory) {
-            if (!recommendedBooks.contains(b)) {
-                recommendedBooks.add(b);
+        if (optionalBook.isPresent()) {
+            Book book = optionalBook.get();
+
+            List<Book> booksByCategory = bookRepository.findTop5ByMainCategoryAndBookIdNot(
+                    book.getMainCategory(), bookId
+            );
+
+            List<Book> booksByAuthor = bookRepository.findTop5ByBookAuthorAndBookIdNot(
+                    book.getBookAuthor(), bookId
+            );
+
+            // Thêm sách theo thể loại
+            for (Book b : booksByCategory) {
+                if (!recommendedBooks.contains(b)) {
+                    recommendedBooks.add(b);
+                }
+            }
+
+            // Thêm sách theo tác giả
+            for (Book b : booksByAuthor) {
+                if (!recommendedBooks.contains(b)) {
+                    recommendedBooks.add(b);
+                }
             }
         }
-        for (Book b : booksByAuthor) {
-            if (!recommendedBooks.contains(b)) {
-                recommendedBooks.add(b);
-            }
-        }
+
+        // Nếu không tìm thấy bookId hoặc chưa đủ số lượng gợi ý → lấy thêm sách bất kỳ
         if (recommendedBooks.size() < 5) {
-            List<Book> additionalBooks = (List<Book>) bookRepository.findTop3ByOrderByBookNameAsc();
+            List<Book> additionalBooks = bookRepository.findTop5ByOrderByBookNameAsc();
             for (Book additionalBook : additionalBooks) {
-                if (!recommendedBooks.contains(additionalBook) && !additionalBook.getBookId().equals(bookId)) {
+                if (!recommendedBooks.contains(additionalBook)
+                        && !additionalBook.getBookId().equals(bookId)) {
                     recommendedBooks.add(additionalBook);
                 }
                 if (recommendedBooks.size() >= 5) break;
             }
         }
+
         return recommendedBooks.stream()
                 .limit(5)
                 .map(b -> BookMapper.mapToBookDto(b, new BookDto()))
                 .collect(Collectors.toList());
     }
+
 
     @Override
     public List<BookDto> getSearchRecommendedBooks(String bookName, List<String> excludedBooks){

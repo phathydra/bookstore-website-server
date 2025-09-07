@@ -67,5 +67,6 @@ public interface BookRepository extends MongoRepository<Book, String> {
 
     Page<Book> findByBookStockQuantityGreaterThan(int bookStockQuantity, Pageable pageable);
 
+    List<Book> findTop5ByOrderByBookNameAsc();
 }
 
