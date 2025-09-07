@@ -17,6 +17,7 @@ public class AuthorController {
 
     @GetMapping("/{name}")
     public AuthorResponseDto getAuthor(@PathVariable String name) {
+        // Spring Boot tự decode từ %xx → "Xuân Quỳnh"
         return authorService.getAuthorInfo(name);
     }
 }
