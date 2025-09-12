@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:3001", allowedHeaders = "*")
+@CrossOrigin("*")
 @RestController
 @RequestMapping("/api/address")
 public class AddressController {

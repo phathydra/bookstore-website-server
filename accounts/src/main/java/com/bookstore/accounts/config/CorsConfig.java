@@ -1,4 +1,4 @@
-package com.tlcn.books.config;
+package com.bookstore.accounts.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,4 +20,5 @@ public class CorsConfig {
         };
     }
 }
+
 
