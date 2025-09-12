@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/email")
-@CrossOrigin(origins = "http://localhost:3001", allowedHeaders = "*")
+@CrossOrigin("*")
 @AllArgsConstructor
 public class EmailController {
 
