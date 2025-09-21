@@ -39,4 +39,7 @@ public class Book {
     private String bookSupplier;
 
     private String bookDescription;
+
+    public void setImportPrice(Double importPrice) {
+    }
 }

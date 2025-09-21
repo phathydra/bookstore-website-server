@@ -2,14 +2,18 @@
 package com.bookstore.orders.controller;
 
 import com.bookstore.orders.dto.OrderDto;
+import com.bookstore.orders.dto.OrderStatusDto;
+import com.bookstore.orders.dto.RevenueByMonthDto;
 import com.bookstore.orders.entity.Order;
 import com.bookstore.orders.service.IOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import com.bookstore.orders.dto.BestSellingBookDto;
@@ -85,4 +89,42 @@ public class OrderController {
         return ResponseEntity.ok(books);
     }
 
+    @GetMapping("/dashboard/order-status")
+    public ResponseEntity<List<OrderStatusDto>> getOrderStatusCounts(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        List<OrderStatusDto> statusCounts = orderService.getOrderStatusCounts(startDate, endDate);
+        return ResponseEntity.ok(statusCounts);
+    }
+
+    @GetMapping("/dashboard/total-orders")
+    public ResponseEntity<Long> getTotalOrderCount(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        long totalOrders = orderService.getTotalOrderCount(startDate, endDate);
+        return ResponseEntity.ok(totalOrders);
+    }
+
+    @GetMapping("/dashboard/total-revenue")
+    public ResponseEntity<Double> getTotalRevenue(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        double totalRevenue = orderService.getTotalRevenue(startDate, endDate);
+        return ResponseEntity.ok(totalRevenue);
+    }
+
+    @GetMapping("/dashboard/revenue-by-month")
+    public ResponseEntity<List<RevenueByMonthDto>> getRevenueByMonth(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        List<RevenueByMonthDto> revenue = orderService.getRevenueByMonth(startDate, endDate);
+        return ResponseEntity.ok(revenue);
+    }
+    @GetMapping("/dashboard/unique-customers")
+    public ResponseEntity<Long> getUniqueCustomerCount(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+        long uniqueCustomers = orderService.getUniqueCustomerCount(startDate, endDate);
+        return ResponseEntity.ok(uniqueCustomers);
+    }
 }
