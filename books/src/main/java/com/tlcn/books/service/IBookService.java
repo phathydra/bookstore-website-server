@@ -57,5 +57,5 @@ public interface IBookService {
 
     ByteArrayInputStream exportBooksInStock() throws IOException;
     ByteArrayInputStream exportBooksOutOfStock() throws IOException;
-
+    void importStock(List<BookDto> booksToImport);
 }

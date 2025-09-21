@@ -1,10 +1,7 @@
 package com.tlcn.books.controller;
 
 import com.tlcn.books.constants.BookConstants;
-import com.tlcn.books.dto.BookDto;
-import com.tlcn.books.dto.BookFilterInputDto;
-import com.tlcn.books.dto.BookWithDiscountDto;
-import com.tlcn.books.dto.ResponseDto;
+import com.tlcn.books.dto.*;
 import com.tlcn.books.exception.ResourceNotFoundException;
 import com.tlcn.books.service.IBookService;
 import jakarta.validation.Valid;
@@ -23,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Collections;
 
+
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, exposedHeaders = "Content-Disposition")
 @RestController
 @RequestMapping(path = "/api/book", produces = {MediaType.APPLICATION_JSON_VALUE})
@@ -35,7 +33,7 @@ public class BookController {
     }
 
     @PostMapping("")
-    public ResponseEntity<ResponseDto> createBook(@Valid @RequestBody BookDto bookDto) {
+    public ResponseEntity<ResponseDto> createBook(@RequestBody BookDto bookDto) { // Bỏ @Valid
         try {
             iBookService.createBook(bookDto);
             return ResponseEntity
@@ -50,7 +48,7 @@ public class BookController {
 
     // Thêm API cập nhật sách
     @PutMapping("/{bookId}")
-    public ResponseEntity<ResponseDto> updateBook(@PathVariable String bookId, @Valid @RequestBody BookDto bookDto) {
+    public ResponseEntity<ResponseDto> updateBook(@PathVariable String bookId, @RequestBody BookDto bookDto) {
         try {
             iBookService.updateBook(bookId, bookDto);
             return ResponseEntity
@@ -341,6 +339,20 @@ public class BookController {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Page.empty());
+        }
+    }
+
+    @PostMapping("/import-stock")
+    public ResponseEntity<ResponseDto> importStock(@Valid @RequestBody ImportStockRequest request) {
+        try {
+            iBookService.importStock(request.getBooks());
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseDto(BookConstants.STATUS_200, "Nhập kho thành công"));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi khi nhập kho: " + e.getMessage()));
         }
     }
 }

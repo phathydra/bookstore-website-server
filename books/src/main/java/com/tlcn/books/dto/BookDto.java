@@ -45,4 +45,6 @@ public class BookDto {
     private String bookSupplier;
 
     private String bookDescription;
+    @NotNull(message = "Giá nhập không được để trống")
+    private Double importPrice;
 }

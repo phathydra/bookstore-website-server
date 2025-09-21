@@ -6,12 +6,14 @@ import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.entity.Book;
 import com.tlcn.books.entity.BookDiscount;
 import com.tlcn.books.entity.Discount;
+import com.tlcn.books.entity.Import;
 import com.tlcn.books.exception.BookAlreadyExistsException;
 import com.tlcn.books.exception.ResourceNotFoundException;
 import com.tlcn.books.mapper.BookMapper;
 import com.tlcn.books.repository.BookDiscountRepository;
 import com.tlcn.books.repository.BookRepository;
 import com.tlcn.books.repository.DiscountRepository;
+import com.tlcn.books.repository.ImportRepository;
 import com.tlcn.books.service.IBookService;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
@@ -27,10 +29,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 
 @Service
 @AllArgsConstructor
@@ -39,6 +43,7 @@ public class BookServiceImpl implements IBookService {
     private final BookRepository bookRepository;
     private final BookDiscountRepository bookDiscountRepository;
     private final DiscountRepository discountRepository;
+    private final ImportRepository importRepository;
 
     private static final Map<String, List<String>> MAIN_CATEGORIES = new HashMap<>();
 
@@ -57,9 +62,16 @@ public class BookServiceImpl implements IBookService {
     @Override
     public void createBook(BookDto bookDto) {
         Book book = BookMapper.mapToBook(bookDto, new Book());
+
         if (bookDto.getBookId() != null && bookRepository.existsById(bookDto.getBookId())) {
             throw new BookAlreadyExistsException("Trùng ID: " + bookDto.getBookId());
         }
+
+
+        if (book.getBookStockQuantity() == 0) {
+            book.setBookStockQuantity(1); // Set số lượng mặc định là 1
+        }
+
         Book savedBook = bookRepository.save(book);
         System.out.println("Saved Book ID: " + savedBook.getBookId());
     }
@@ -71,17 +83,48 @@ public class BookServiceImpl implements IBookService {
         }
 
         Book existingBook = optionalBook.get();
-        existingBook.setBookName(bookDto.getBookName());
-        existingBook.setBookAuthor(bookDto.getBookAuthor());
-        existingBook.setBookImages(bookDto.getBookImages()); // sửa lại ở đây
-        existingBook.setBookPrice(bookDto.getBookPrice());
-        existingBook.setBookCategory(bookDto.getBookCategory());
-        existingBook.setBookYearOfProduction(bookDto.getBookYearOfProduction());
-        existingBook.setBookPublisher(bookDto.getBookPublisher());
-        existingBook.setBookLanguage(bookDto.getBookLanguage());
-        existingBook.setBookStockQuantity(bookDto.getBookStockQuantity());
-        existingBook.setBookSupplier(bookDto.getBookSupplier());
-        existingBook.setBookDescription(bookDto.getBookDescription());
+
+        // Cập nhật từng trường nếu giá trị mới hợp lệ
+        // Đối với các trường String
+        if (bookDto.getBookName() != null && !bookDto.getBookName().trim().isEmpty()) {
+            existingBook.setBookName(bookDto.getBookName());
+        }
+        if (bookDto.getBookAuthor() != null && !bookDto.getBookAuthor().trim().isEmpty()) {
+            existingBook.setBookAuthor(bookDto.getBookAuthor());
+        }
+        if (bookDto.getBookImages() != null && !bookDto.getBookImages().isEmpty()) {
+            existingBook.setBookImages(bookDto.getBookImages());
+        }
+        if (bookDto.getBookCategory() != null && !bookDto.getBookCategory().trim().isEmpty()) {
+            existingBook.setBookCategory(bookDto.getBookCategory());
+        }
+        if (bookDto.getBookPublisher() != null && !bookDto.getBookPublisher().trim().isEmpty()) {
+            existingBook.setBookPublisher(bookDto.getBookPublisher());
+        }
+        if (bookDto.getBookLanguage() != null && !bookDto.getBookLanguage().trim().isEmpty()) {
+            existingBook.setBookLanguage(bookDto.getBookLanguage());
+        }
+        if (bookDto.getBookSupplier() != null && !bookDto.getBookSupplier().trim().isEmpty()) {
+            existingBook.setBookSupplier(bookDto.getBookSupplier());
+        }
+        if (bookDto.getBookDescription() != null && !bookDto.getBookDescription().trim().isEmpty()) {
+            existingBook.setBookDescription(bookDto.getBookDescription());
+        }
+
+        // Đối với các trường kiểu nguyên thủy (double, int)
+        // Cập nhật chỉ khi giá trị không phải là giá trị mặc định (0) và hợp lệ
+        if (bookDto.getBookPrice() != 0) {
+            existingBook.setBookPrice(bookDto.getBookPrice());
+        }
+        if (bookDto.getBookYearOfProduction() != 0) {
+            existingBook.setBookYearOfProduction(bookDto.getBookYearOfProduction());
+        }
+        if (bookDto.getBookStockQuantity() != 0) {
+            existingBook.setBookStockQuantity(bookDto.getBookStockQuantity());
+        }
+        if (bookDto.getImportPrice() != null) {
+            existingBook.setImportPrice(bookDto.getImportPrice());
+        }
 
         bookRepository.save(existingBook);
     }
@@ -672,4 +715,37 @@ public class BookServiceImpl implements IBookService {
         }
     }
 
+    @Override
+    @Transactional
+    public void importStock(List<BookDto> booksToImport) {
+        for (BookDto bookDto : booksToImport) {
+            Optional<Book> existingBook = bookRepository.findByBookNameIgnoreCaseAndBookAuthorIgnoreCase(bookDto.getBookName(), bookDto.getBookAuthor());
+
+            Book book;
+            if (existingBook.isPresent()) {
+                // Trường hợp 1: Sách đã tồn tại
+                book = existingBook.get();
+                book.setBookStockQuantity(book.getBookStockQuantity() + bookDto.getBookStockQuantity());
+                bookRepository.save(book);
+            } else {
+                // Trường hợp 2: Sách mới
+                book = BookMapper.mapToBook(bookDto, new Book());
+                book.setBookStockQuantity(bookDto.getBookStockQuantity());
+                bookRepository.save(book);
+            }
+
+            // Tạo một document Import mới để lưu lịch sử
+            Import newImport = new Import();
+            newImport.setBookId(book.getBookId());
+            newImport.setBookName(book.getBookName());
+            newImport.setBookAuthor(book.getBookAuthor());
+            newImport.setBookSupplier(book.getBookSupplier());
+            newImport.setQuantity(bookDto.getBookStockQuantity());
+            newImport.setImportPrice(bookDto.getImportPrice());
+            newImport.setImportDate(LocalDateTime.now());
+
+            // Lưu document Import vào collection "imports"
+            importRepository.save(newImport);
+        }
+    }
 }
