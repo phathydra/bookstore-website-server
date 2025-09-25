@@ -373,7 +373,7 @@ public class BookServiceImpl implements IBookService {
 
         Page<Book> books;
 
-        if(input.getBookCategory().isEmpty() || input.getBookCategory() == null){
+        if(input.getBookCategory() == null || input.getBookCategory().isEmpty()){
             books = bookRepository.filterBooksByAllNoSubCategory(
                     authorRegex,
                     mainCategoryPatterns,
