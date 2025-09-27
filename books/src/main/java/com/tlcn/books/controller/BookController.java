@@ -355,4 +355,29 @@ public class BookController {
                     .body(new ResponseDto(BookConstants.STATUS_500, "Lỗi khi nhập kho: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/details-by-ids")
+    public ResponseEntity<List<BookDetailForOrderDto>> getBookDetailsByIds(@RequestBody List<String> bookIds) {
+        try {
+            List<BookDetailForOrderDto> details = iBookService.getBookDetailsByIds(bookIds);
+            return ResponseEntity.ok(details);
+        } catch (Exception e) {
+            System.err.println("Error fetching book details by IDs: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/all-details")
+    public ResponseEntity<List<BookDetailDto>> getAllBookDetails() {
+        try {
+            List<BookDetailDto> bookDetails = iBookService.getAllBookDetails();
+            return ResponseEntity.ok(bookDetails);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Collections.emptyList());
+        }
+    }
 }

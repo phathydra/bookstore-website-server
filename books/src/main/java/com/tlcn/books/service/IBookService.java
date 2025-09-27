@@ -1,8 +1,6 @@
 package com.tlcn.books.service;
 
-import com.tlcn.books.dto.BookDto;
-import com.tlcn.books.dto.BookFilterInputDto;
-import com.tlcn.books.dto.BookWithDiscountDto;
+import com.tlcn.books.dto.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -58,4 +56,6 @@ public interface IBookService {
     ByteArrayInputStream exportBooksInStock() throws IOException;
     ByteArrayInputStream exportBooksOutOfStock() throws IOException;
     void importStock(List<BookDto> booksToImport);
+    List<BookDetailForOrderDto> getBookDetailsByIds(List<String> bookIds);
+    List<BookDetailDto> getAllBookDetails();
 }
