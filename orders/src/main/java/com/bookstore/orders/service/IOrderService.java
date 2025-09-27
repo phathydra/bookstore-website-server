@@ -23,11 +23,16 @@ public interface IOrderService {
     Optional<Order> updateShippingStatus(String orderId, String shippingStatus);
 
     Page<Order> getFilteredAndSearchedOrders(int page, int size, String shippingStatus, String search);
-    List<BestSellingBookDto> getTop5BestSellingBooks();
+    List<BestSellingBookDto> getTop5BestSellingBooks(Date startDate, Date endDate);
     List<BestSellingBookDto> getPurchasedBooksByAccountId(String accountId);
     List<OrderStatusDto> getOrderStatusCounts(Date startDate, Date endDate);
     long getTotalOrderCount(Date startDate, Date endDate);
     double getTotalRevenue(Date startDate, Date endDate);
     List<RevenueByMonthDto> getRevenueByMonth(Date startDate, Date endDate);
     long getUniqueCustomerCount(Date startDate, Date endDate);
+    List<BestSellingBookDto> getTop5BestSellingCategories(Date startDate, Date endDate);
+    Page<BestSellingBookDto> getWorstSellingBooksPaginated(Date startDate, Date endDate, int page, int size);
+    Page<BestSellingBookDto> getLowStockAlertsPaginated(int threshold, int page, int size); // THÊM
+
+    Page<BestSellingBookDto> getConsistentSellersPaginated(int months, int minAvgMonthlySales, int page, int size);
 }

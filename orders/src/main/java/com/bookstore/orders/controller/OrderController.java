@@ -78,8 +78,10 @@ public class OrderController {
     }
 
     @GetMapping("/top-selling")
-    public ResponseEntity<List<BestSellingBookDto>> getTopSellingBooks() {
-        List<BestSellingBookDto> topBooks = orderService.getTop5BestSellingBooks();
+    public ResponseEntity<List<BestSellingBookDto>> getTopSellingBooks(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, // THÊM
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) { // THÊM
+        List<BestSellingBookDto> topBooks = orderService.getTop5BestSellingBooks(startDate, endDate); // CẬP NHẬT
         return ResponseEntity.ok(topBooks);
     }
 
@@ -126,5 +128,49 @@ public class OrderController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
         long uniqueCustomers = orderService.getUniqueCustomerCount(startDate, endDate);
         return ResponseEntity.ok(uniqueCustomers);
+    }
+
+    @GetMapping("/top-selling-categories")
+    public ResponseEntity<List<BestSellingBookDto>> getTopSellingCategories(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, // THÊM
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) { // THÊM
+        List<BestSellingBookDto> topCategories = orderService.getTop5BestSellingCategories(startDate, endDate); // CẬP NHẬT
+        return ResponseEntity.ok(topCategories);
+    }
+
+    @GetMapping("/worst-selling")
+    public ResponseEntity<Page<BestSellingBookDto>> getTopWorstSellingBooks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) {
+
+        // Gọi Service với các tham số phân trang mới
+        Page<BestSellingBookDto> worstBooksPage = orderService.getWorstSellingBooksPaginated(
+                startDate, endDate, page, size
+        );
+        return ResponseEntity.ok(worstBooksPage);
+    }
+
+    // THÊM ENDPOINT THỐNG KÊ SÁCH SẮP HẾT HÀNG CÓ PHÂN TRANG
+    @GetMapping("/dashboard/low-stock-alerts")
+    public ResponseEntity<Page<BestSellingBookDto>> getLowStockAlerts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "20") int threshold) { // Mặc định cảnh báo nếu tồn kho < 20
+        Page<BestSellingBookDto> alerts = orderService.getLowStockAlertsPaginated(threshold, page, size);
+        return ResponseEntity.ok(alerts);
+    }
+
+    // THÊM ENDPOINT THỐNG KÊ SÁCH BÁN CHẠY ĐỀU CÓ PHÂN TRANG
+    @GetMapping("/dashboard/consistent-sellers")
+    public ResponseEntity<Page<BestSellingBookDto>> getConsistentSellers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "3") int months, // Mặc định 3 tháng
+            @RequestParam(defaultValue = "10") int minAvgMonthlySales) { // Mặc định trung bình 10 cuốn/tháng
+
+        Page<BestSellingBookDto> sellers = orderService.getConsistentSellersPaginated(months, minAvgMonthlySales, page, size);
+        return ResponseEntity.ok(sellers);
     }
 }

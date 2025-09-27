@@ -1,6 +1,7 @@
 package com.tlcn.books.mapper;
 
 import com.tlcn.books.dto.BookDto;
+import com.tlcn.books.dto.BookDetailDto; // <--- CẦN ĐẢM BẢO ĐÃ IMPORT DTO NÀY
 import com.tlcn.books.dto.BookWithDiscountDto;
 import com.tlcn.books.entity.Book;
 
@@ -57,5 +58,22 @@ public class BookMapper {
         bookWithDiscountDto.setBookDescription(book.getBookDescription());
 
         return bookWithDiscountDto;
+    }
+
+    /**
+     * PHƯƠNG THỨC MỚI: Dành cho Order Service lấy chi tiết tồn kho và thể loại.
+     * Sửa lỗi bookStockQuantity = 0 và bookCategory = null.
+     */
+    public static BookDetailDto mapToBookDetailDto(Book book, BookDetailDto bookDetailDto){
+        bookDetailDto.setId(book.getBookId()); // ID là bookId trong BookDetailDto
+        bookDetailDto.setBookName(book.getBookName());
+
+        // Lấy tên thể loại (thường là bookCategory hoặc mainCategory, tôi dùng bookCategory)
+        bookDetailDto.setBookCategory(book.getBookCategory());
+
+        // LẤY SỐ LƯỢNG TỒN KHO THỰC TẾ
+        bookDetailDto.setBookStockQuantity(book.getBookStockQuantity());
+
+        return bookDetailDto;
     }
 }

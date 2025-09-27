@@ -1,8 +1,6 @@
 package com.tlcn.books.service.impl;
 
-import com.tlcn.books.dto.BookDto;
-import com.tlcn.books.dto.BookFilterInputDto;
-import com.tlcn.books.dto.BookWithDiscountDto;
+import com.tlcn.books.dto.*;
 import com.tlcn.books.entity.Book;
 import com.tlcn.books.entity.BookDiscount;
 import com.tlcn.books.entity.Discount;
@@ -747,5 +745,30 @@ public class BookServiceImpl implements IBookService {
             // Lưu document Import vào collection "imports"
             importRepository.save(newImport);
         }
+    }
+
+    @Override
+    public List<BookDetailForOrderDto> getBookDetailsByIds(List<String> bookIds) {
+        // 1. Tìm tất cả các sách theo danh sách bookId
+        List<Book> books = bookRepository.findAllById(bookIds);
+
+        // 2. Chuyển đổi sang BookDetailForOrderDto
+        return books.stream()
+                .map(book -> new BookDetailForOrderDto(
+                        book.getBookId(),
+                        book.getBookCategory()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BookDetailDto> getAllBookDetails() {
+        // Lấy tất cả sách từ repository
+        List<Book> allBooks = bookRepository.findAll();
+
+        // Mapping sang BookDetailDto bằng cách sử dụng stream và BookMapper
+        return allBooks.stream()
+                .map(book -> BookMapper.mapToBookDetailDto(book, new BookDetailDto()))
+                .collect(Collectors.toList());
     }
 }
