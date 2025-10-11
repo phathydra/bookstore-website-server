@@ -19,5 +19,7 @@ public class OrderDto {
     private String orderStatus;
     private String shippingStatus;
     private String paymentMethod;
-    private LocalDateTime dateOrder;  // Optional: Add this field if needed
+    private LocalDateTime dateOrder;
+    private String DeliveryUnitId;
+    private String shipperId;
 }

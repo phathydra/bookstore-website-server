@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import com.bookstore.orders.dto.BestSellingBookDto;
 
-@CrossOrigin(origins = "http://localhost:3001, http://localhost:3000")
+@CrossOrigin(origins = "http://localhost:3001, http://localhost:3000, http://localhost:3002")
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -173,4 +173,65 @@ public class OrderController {
         Page<BestSellingBookDto> sellers = orderService.getConsistentSellersPaginated(months, minAvgMonthlySales, page, size);
         return ResponseEntity.ok(sellers);
     }
+    @PutMapping("/assign-delivery-unit/{orderId}")
+    public ResponseEntity<Order> assignDeliveryUnit(
+            @PathVariable String orderId,
+            @RequestParam String deliveryUnitId) {
+
+        Optional<Order> updatedOrder = orderService.assignDeliveryUnit(orderId, deliveryUnitId);
+
+        return updatedOrder.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/assign-shipper/{orderId}")
+    public ResponseEntity<Order> assignShipper(
+            @PathVariable String orderId,
+            @RequestParam String shipperId) {
+
+        Optional<Order> updatedOrder = orderService.assignShipper(orderId, shipperId);
+
+        return updatedOrder.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
+    @GetMapping("/delivery-unit/{deliveryUnitId}")
+    public ResponseEntity<Page<Order>> getOrdersByDeliveryUnitId(
+            @PathVariable String deliveryUnitId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<Order> orders = orderService.getOrdersByDeliveryUnitId(deliveryUnitId, page, size);
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            System.err.println("Error fetching orders by deliveryUnitId: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
+
+    @GetMapping("/shipper/{shipperId}")
+    public ResponseEntity<Page<Order>> getOrdersByShipperId(
+            @PathVariable String shipperId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<Order> orders = orderService.getOrdersByShipperId(shipperId, page, size);
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            System.err.println("Error fetching orders by shipperId: " + e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
+
+    @GetMapping("/{orderId}/address")
+    public ResponseEntity<String> getOrderAddress(@PathVariable String orderId) {
+        String fullAddress = orderService.getFullAddressByOrderId(orderId);
+        return ResponseEntity.ok(fullAddress);
+    }
+
 }

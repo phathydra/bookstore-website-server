@@ -13,7 +13,7 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") // Cho phép tất cả các endpoint
-                        .allowedOrigins("http://localhost:3000", "http://localhost:3001") // Cho phép frontend truy cập
+                        .allowedOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:3002") // Cho phép frontend truy cập
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Hỗ trợ tất cả các phương thức HTTP
                         .allowCredentials(true);
             }

@@ -1,4 +1,4 @@
-package com.bookstore.accounts.config; // Hoặc package bạn muốn
+package com.bookstore.Shipping.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

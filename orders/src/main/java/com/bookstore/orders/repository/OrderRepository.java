@@ -23,4 +23,8 @@ public interface OrderRepository extends MongoRepository<Order, String> {
     // Đã thay đổi từ IdContaining sang OrderIdContaining
     Page<Order> findByShippingStatusAndRecipientNameContainingIgnoreCaseOrShippingStatusAndOrderIdContaining(
             String shippingStatus1, String recipientName, String shippingStatus2, String orderId, Pageable pageable);
+
+    Page<Order> findByDeliveryUnitId(String deliveryUnitId, Pageable pageable);
+    Page<Order> findByShipperId(String shipperId, Pageable pageable);
+
 }

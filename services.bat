@@ -16,5 +16,9 @@ cd chatbot
 start cmd /k mvn spring-boot:run
 cd ..
 
+cd shipping
+start cmd /k mvn spring-boot:run
+cd ..
+
 exit
 

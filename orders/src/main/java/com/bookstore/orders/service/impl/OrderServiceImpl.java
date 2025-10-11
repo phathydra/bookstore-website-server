@@ -781,4 +781,67 @@ public class OrderServiceImpl implements IOrderService {
 
         return new PageImpl<>(pageContent, pageable, totalBooks);
     }
+
+    @Override
+    public Optional<Order> assignDeliveryUnit(String orderId, String deliveryUnitId) {
+        return orderRepository.findById(orderId)
+                .map(order -> {
+                    // Cập nhật DeliveryUnitId
+                    order.setDeliveryUnitId(deliveryUnitId);
+                    return orderRepository.save(order);
+                });
+    }
+
+    @Override
+    public Optional<Order> assignShipper(String orderId, String shipperId) {
+        return orderRepository.findById(orderId).map(order -> {
+            order.setShipperId(shipperId);
+            return orderRepository.save(order);
+        });
+    }
+
+    @Override
+    public Page<Order> getOrdersByDeliveryUnitId(String deliveryUnitId, int page, int size) {
+        // Yêu cầu: sắp xếp theo ngày đặt hàng giảm dần
+        Pageable pageable = PageRequest.of(page, size, Sort.by("dateOrder").descending());
+
+        // Sử dụng phương thức findByDeliveryUnitId từ OrderRepository
+        return orderRepository.findByDeliveryUnitId(deliveryUnitId, pageable);
+    }
+
+    @Override
+    public Page<Order> getOrdersByShipperId(String shipperId, int page, int size) {
+        // Sắp xếp theo ngày đặt hàng giảm dần
+        Pageable pageable = PageRequest.of(page, size, Sort.by("dateOrder").descending());
+
+        // Gọi repository
+        return orderRepository.findByShipperId(shipperId, pageable);
+    }
+
+    @Override
+    public String getFullAddressByOrderId(String orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        // Ghép địa chỉ theo format mong muốn
+        StringBuilder addressBuilder = new StringBuilder();
+        if (order.getNote() != null && !order.getNote().isBlank()) {
+            addressBuilder.append(order.getNote()).append(", ");
+        }
+        if (order.getWard() != null && !order.getWard().isBlank()) {
+            addressBuilder.append(order.getWard()).append(", ");
+        }
+        if (order.getDistrict() != null && !order.getDistrict().isBlank()) {
+            addressBuilder.append(order.getDistrict()).append(", ");
+        }
+        if (order.getCity() != null && !order.getCity().isBlank()) {
+            addressBuilder.append(order.getCity()).append(", ");
+        }
+        if (order.getCountry() != null && !order.getCountry().isBlank()) {
+            addressBuilder.append(order.getCountry());
+        }
+
+        return addressBuilder.toString().replaceAll(", $", ""); // bỏ dấu , thừa
+    }
+
 }
