@@ -5,3 +5,5 @@ books/src/main/resources/application.yml
 orders/src/main/resources/application.yml
 
 chatbot/src/main/resources/application.yml
+
+shipping/src/main/resources/application.yml

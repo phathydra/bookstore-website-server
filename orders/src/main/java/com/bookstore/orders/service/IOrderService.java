@@ -33,6 +33,13 @@ public interface IOrderService {
     List<BestSellingBookDto> getTop5BestSellingCategories(Date startDate, Date endDate);
     Page<BestSellingBookDto> getWorstSellingBooksPaginated(Date startDate, Date endDate, int page, int size);
     Page<BestSellingBookDto> getLowStockAlertsPaginated(int threshold, int page, int size); // THÊM
-
+    Optional<Order> assignDeliveryUnit(String orderId, String deliveryUnitId);
     Page<BestSellingBookDto> getConsistentSellersPaginated(int months, int minAvgMonthlySales, int page, int size);
+    Page<Order> getOrdersByDeliveryUnitId(String deliveryUnitId, int page, int size);
+
+    Optional<Order> assignShipper(String orderId, String shipperId);
+
+    Page<Order> getOrdersByShipperId(String shipperId, int page, int size);
+
+    String getFullAddressByOrderId(String orderId);
 }

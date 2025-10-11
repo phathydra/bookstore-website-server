@@ -3,6 +3,8 @@ package com.bookstore.orders.entity;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
 import java.util.List;
 import java.time.LocalDateTime;  // Import LocalDateTime
 
@@ -24,5 +26,8 @@ public class Order {
     private String orderStatus;
     private String shippingStatus;
     private String paymentMethod;
-    private LocalDateTime dateOrder;  // Add this field for order date
+    private LocalDateTime dateOrder;
+    @Field("DeliveryUnitId")
+    private String deliveryUnitId;
+    private String shipperId;
 }

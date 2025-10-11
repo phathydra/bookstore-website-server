@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, exposedHeaders = "Content-Disposition")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://localhost:3002"}, exposedHeaders = "Content-Disposition")
 @RestController
 @RequestMapping(path = "/api/account", produces = {MediaType.APPLICATION_JSON_VALUE})
 @AllArgsConstructor
