@@ -18,7 +18,13 @@ public class Conversation {
     @Id
     private String id;
 
-    private String userId;
+    private String title;
+
+    private String userId1;
+
+    private String userId2;
+
+    private String channelType;
 
     private LocalDateTime createdAt;
 
