@@ -8,9 +8,10 @@ import org.springframework.stereotype.Component;
 public class ConversationMapper {
     public static Conversation toConversation(ConversationDto dto, Conversation conversation){
         conversation.setId(dto.getId());
-        conversation.setTitle(dto.getTitle());
-        conversation.setUserId1(dto.getUserId1());
-        conversation.setUserId2(dto.getUserId2());
+        conversation.setTitle1(dto.getTitle1());
+        conversation.setTitle2(dto.getTitle2());
+        conversation.setAccountId1(dto.getAccountId1());
+        conversation.setAccountId2(dto.getAccountId2());
         conversation.setChannelType(dto.getChannelType());
         conversation.setCreatedAt(dto.getCreatedAt());
         conversation.setLastUpdated(dto.getLastUpdated());
@@ -19,9 +20,10 @@ public class ConversationMapper {
 
     public static ConversationDto toConversationDto(Conversation conversation, ConversationDto dto){
         dto.setId(conversation.getId());
-        dto.setTitle(conversation.getTitle());
-        dto.setUserId1(conversation.getUserId1());
-        dto.setUserId2(conversation.getUserId2());
+        dto.setTitle1(conversation.getTitle1());
+        dto.setTitle2(conversation.getTitle2());
+        dto.setAccountId1(conversation.getAccountId1());
+        dto.setAccountId2(conversation.getAccountId2());
         dto.setChannelType(conversation.getChannelType());
         dto.setCreatedAt(conversation.getCreatedAt());
         dto.setLastUpdated(conversation.getLastUpdated());

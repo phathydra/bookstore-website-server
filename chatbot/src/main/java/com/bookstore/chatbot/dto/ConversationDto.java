@@ -8,11 +8,13 @@ import java.time.LocalDateTime;
 public class ConversationDto {
     private String id;
 
-    private String title;
+    private String title1;
 
-    private String userId1;
+    private String title2;
 
-    private String userId2;
+    private String accountId1;
+
+    private String accountId2;
 
     private String channelType;
 

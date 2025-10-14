@@ -4,7 +4,6 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.lang.annotation.Documented;
 import java.time.LocalDateTime;
 
 @Getter
@@ -18,11 +17,13 @@ public class Conversation {
     @Id
     private String id;
 
-    private String title;
+    private String title1;
 
-    private String userId1;
+    private String title2;
 
-    private String userId2;
+    private String accountId1;
+
+    private String accountId2;
 
     private String channelType;
 

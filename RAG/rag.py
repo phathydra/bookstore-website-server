@@ -1,6 +1,8 @@
 from pymongo import MongoClient
 from sentence_transformers import SentenceTransformer
 import numpy as np
+from fastapi import FastAPI, Request
+import uvicorn
 
 mongo_uri = "mongodb+srv://tlcn_user:tlcn_bookstore@cluster0.jmrvw.mongodb.net/"
 client = MongoClient(mongo_uri)
@@ -8,6 +10,8 @@ db = client["BookStore"]
 embedded_collection = db["faq_embeded"]
 
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+app = FastAPI(title="Bookstore FAQ Retrieval API")
 
 def retrieve_answer(user_question, top_k=1):
     """Tìm câu trả lời gần nhất trong MongoDB"""
@@ -29,13 +33,17 @@ def retrieve_answer(user_question, top_k=1):
         return best_doc["content"]
     else:
         return "Không tìm thấy câu trả lời phù hợp."
+    
+@app.post("/ask")
+async def ask_question(request: Request):
+    body = await request.json()
+    question = body.get("question", "").strip()
+
+    if not question:
+        return {"error" : "No question found"}
+    
+    answer = retrieve_answer(question)
+    return {"answer" : answer}
 
 if __name__ == "__main__":
-    while True:
-        user_input = input("\nKhách hàng: ")
-        if user_input.lower() in ["exit", "quit", "bye"]:
-            print("Kết thúc hội thoại.")
-            break
-
-        answer = retrieve_answer(user_input)
-        print("Chatbot:\n", answer)
+    uvicorn.run("rag:app", host="0.0.0.0", port=8085, reload=True)
