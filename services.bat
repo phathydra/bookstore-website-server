@@ -20,5 +20,8 @@ cd shipping
 start cmd /k mvn spring-boot:run
 cd ..
 
+cd RAG
+rag.py
+
 exit
 

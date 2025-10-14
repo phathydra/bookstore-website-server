@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ConversationRepository extends MongoRepository<Conversation, String> {
-    List<Conversation> findAllByUserId1OrUserId2OrderByLastUpdatedDesc(String userId1, String UserId2);
+    List<Conversation> findAllByAccountId1OrAccountId2OrderByLastUpdatedDesc(String accountId1, String accountId2);
 }

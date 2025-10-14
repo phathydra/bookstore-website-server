@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import com.bookstore.chatbot.dto.BookFilterInputDto;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ChatbotService {
@@ -50,11 +51,18 @@ public class ChatbotService {
                 "Sức Khỏe & Ẩm Thực (Nấu ăn, Dinh dưỡng, Thể dục - thể thao).";
 
         // Build the prompt for the AI
-        String systemMessage = "You are a helpful assistant for a bookstore. Respond only in Vietnamese in JSON format with 'type' (either 'search' or 'recommendation') and 'parameters' or 'content' as appropriate. " +
-                "For 'type', consider 'search' for queries like 'tìm', 'tìm kiếm', 'tra cứu', and 'recommendation' for 'giới thiệu', 'đề xuất', 'gợi ý'. " +
-                "Use only the following genres for 'genre' in your response: " + allowedGenres + " " +
-                "If the user provides a genre that is similar to or a typo of an allowed genre, map it to the closest match. " +
-                "For example: { \"type\": \"search\", \"parameters\": { \"genre\": \"Văn Học\", \"author\": \"Nguyễn Nhật Ánh\" } } or { \"type\": \"recommendation\", \"parameters\": { \"genre\": \"Vật lý\" } }. Return only JSON, no extra text.";
+        String systemMessage =
+                "You are a helpful assistant for a bookstore. Respond only in Vietnamese in JSON format with 'type' (either 'search', 'recommendation', or 'faq') and 'parameters' or 'content' as appropriate. " +
+                        "For 'type', consider: " +
+                        "'search' for queries like 'tìm', 'tìm kiếm', 'tra cứu', 'tôi muốn tìm', or when the user specifies book details such as author, title, or genre. " +
+                        "'recommendation' for queries like 'giới thiệu', 'đề xuất', 'gợi ý', 'nên đọc', or when the user asks for book suggestions. " +
+                        "'faq' for questions related to store usage, account, payment, shipping, refund, promotions, contact, or general bookstore policies (e.g., 'làm thế nào để mua sách', 'chính sách hoàn tiền', 'tôi có cần tài khoản không'). " +
+                        "Use only the following genres for 'genre' in your response: " + allowedGenres + " " +
+                        "If the user provides a genre that is similar to or a typo of an allowed genre, map it to the closest match. " +
+                        "For example: { \"type\": \"search\", \"parameters\": { \"genre\": \"Văn Học\", \"author\": \"Nguyễn Nhật Ánh\" } } " +
+                        "or { \"type\": \"recommendation\", \"parameters\": { \"genre\": \"Vật lý\" } } " +
+                        "or { \"type\": \"faq\", \"content\": \"<User message>\" }. " +
+                        "Return only JSON, no extra text.";
 
         // Call the AI API
         String aiResponse = callAIAPI(systemMessage, userMessage);
@@ -122,11 +130,14 @@ public class ChatbotService {
 
             switch (type) {
                 case "search":
+
                 case "recommendation":
                     JsonNode params = json.get("parameters");
                     String genre = params.has("genre") ? params.get("genre").asText() : "";
                     String author = params.has("author") ? params.get("author").asText() : "";
                     return fetchBooks(genre, author, type);
+                case "faq":
+
                 default:
                     return "Xin lỗi quý khách, tôi chưa hiểu rõ yêu cầu của bạn. Vui lòng cung cấp thêm thông tin để tôi có thể hỗ trợ tốt hơn.";
             }
@@ -178,4 +189,30 @@ public class ChatbotService {
             return "Xin lỗi quý khách, có lỗi xảy ra khi tìm kiếm sách: " + e.getMessage() + ". Vui lòng thử lại sau.";
         }
     }
+
+    private String faqRAGFetch(String userMssg) {
+        try {
+            String url = "http://localhost:8085/ask";
+
+            Map<String, String> body = Map.of("question", userMssg);
+
+            ResponseEntity<String> response = bookServiceRestTemplate.postForEntity(url, body, String.class);
+
+            JsonNode jsonResponse = objectMapper.readTree(response.getBody());
+            String answer = jsonResponse.has("answer")
+                    ? jsonResponse.get("answer").asText()
+                    : "Không tìm thấy câu trả lời phù hợp cho câu hỏi của quý khách.";
+            
+            StringBuilder formattedResponse = new StringBuilder();
+            formattedResponse.append("Tôi đã tìm thấy thông tin sau cho câu hỏi của quý khách:<br />");
+            formattedResponse.append(answer);
+            formattedResponse.append("<br /><br />Cảm ơn quý khách đã liên hệ với chúng tôi!");
+
+            return formattedResponse.toString();
+
+        } catch (Exception e) {
+            return "Xin lỗi quý khách, có lỗi xảy ra khi truy vấn thông tin FAQ: " + e.getMessage() + ". Vui lòng thử lại sau.";
+        }
+    }
+
 }

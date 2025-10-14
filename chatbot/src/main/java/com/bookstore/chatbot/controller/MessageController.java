@@ -11,7 +11,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/message")
-@CrossOrigin(origins = "http://localhost:3001")
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002"
+})
 public class MessageController {
     @Autowired
     private IMessageService iMessageService;
@@ -19,7 +23,7 @@ public class MessageController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    @GetMapping("/fecth")
+    @GetMapping("/fetch")
     public ResponseEntity<List<MessageDto>> loadAllMessages(@RequestParam("conversationId") String conversationId){
         List<MessageDto> messageDtos = iMessageService.loadALlMessagesByConversationId(conversationId);
         return ResponseEntity.ok(messageDtos);
