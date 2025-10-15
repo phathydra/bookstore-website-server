@@ -52,17 +52,18 @@ public class ChatbotService {
 
         // Build the prompt for the AI
         String systemMessage =
-                "You are a helpful assistant for a bookstore. Respond only in Vietnamese in JSON format with 'type' (either 'search', 'recommendation', or 'faq') and 'parameters' or 'content' as appropriate. " +
-                        "For 'type', consider: " +
-                        "'search' for queries like 'tìm', 'tìm kiếm', 'tra cứu', 'tôi muốn tìm', or when the user specifies book details such as author, title, or genre. " +
-                        "'recommendation' for queries like 'giới thiệu', 'đề xuất', 'gợi ý', 'nên đọc', or when the user asks for book suggestions. " +
-                        "'faq' for questions related to store usage, account, payment, shipping, refund, promotions, contact, or general bookstore policies (e.g., 'làm thế nào để mua sách', 'chính sách hoàn tiền', 'tôi có cần tài khoản không'). " +
-                        "Use only the following genres for 'genre' in your response: " + allowedGenres + " " +
-                        "If the user provides a genre that is similar to or a typo of an allowed genre, map it to the closest match. " +
-                        "For example: { \"type\": \"search\", \"parameters\": { \"genre\": \"Văn Học\", \"author\": \"Nguyễn Nhật Ánh\" } } " +
-                        "or { \"type\": \"recommendation\", \"parameters\": { \"genre\": \"Vật lý\" } } " +
-                        "or { \"type\": \"faq\", \"content\": \"<User message>\" }. " +
-                        "Return only JSON, no extra text.";
+                "You are a helpful assistant for a bookstore. Respond only in Vietnamese in JSON format with fields 'type' (either 'search', 'recommendation', or 'faq') and 'parameters' or 'content' as appropriate. " +
+                        "Classify the user's request as follows: " +
+                        "- Use 'search' if the user wants to find or look up specific books, including when they mention keywords like 'tìm', 'tìm kiếm', 'tra cứu', 'tôi muốn tìm', or provide details such as author, title, or genre. " +
+                        "- Use 'recommendation' if the user asks for book suggestions, uses words like 'giới thiệu', 'đề xuất', 'gợi ý', 'nên đọc', or requests advice on what to read. " +
+                        "- For all other cases that do not clearly match 'search' or 'recommendation', classify as 'faq'. " +
+                        "Use only the following genres for the 'genre' field in your response: " + allowedGenres + ". " +
+                        "If the user mentions a genre that is misspelled or similar to one of the allowed genres, map it to the closest valid match. " +
+                        "Output examples: " +
+                        "{ \"type\": \"search\", \"parameters\": { \"genre\": \"Văn Học\", \"author\": \"Nguyễn Nhật Ánh\" } } " +
+                        "{ \"type\": \"recommendation\", \"parameters\": { \"genre\": \"Vật lý\" } } " +
+                        "{ \"type\": \"faq\", \"parameters\": \"{\"content\": \"plain message of input, no change here\"}\" }. " +
+                        "Return only valid JSON — do not include any extra explanation or text.";
 
         // Call the AI API
         String aiResponse = callAIAPI(systemMessage, userMessage);
@@ -137,7 +138,8 @@ public class ChatbotService {
                     String author = params.has("author") ? params.get("author").asText() : "";
                     return fetchBooks(genre, author, type);
                 case "faq":
-
+                    String content = json.get("parameters").get("content").asText();
+                    return faqRAGFetch(content);
                 default:
                     return "Xin lỗi quý khách, tôi chưa hiểu rõ yêu cầu của bạn. Vui lòng cung cấp thêm thông tin để tôi có thể hỗ trợ tốt hơn.";
             }
