@@ -8,13 +8,14 @@ import com.bookstore.accounts.entity.Account;
 import com.bookstore.accounts.exception.UsernameAlreadyExistException;
 import com.bookstore.accounts.repository.AccountRepository;
 import com.bookstore.accounts.service.IAccountService;
+import com.bookstore.accounts.service.JwtService; // <-- THÊM IMPORT
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.InputStreamResource;
 
 import lombok.AllArgsConstructor;
 
-import org.springframework.beans.factory.annotation.Autowired;
+// Bỏ Autowired vì đã dùng @AllArgsConstructor
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -34,14 +35,14 @@ import java.util.Optional;
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://localhost:3002"}, exposedHeaders = "Content-Disposition")
 @RestController
 @RequestMapping(path = "/api/account", produces = {MediaType.APPLICATION_JSON_VALUE})
-@AllArgsConstructor
+@AllArgsConstructor // Lombok sẽ tự động tiêm các biến 'final'
 public class AccountController {
 
-    @Autowired
-    private AccountRepository accountRepository;
-    private IAccountService iAccountService;
-    private final IAccountService accountService;
-    private PasswordEncoder passwordEncoder;
+    // Sửa lại DI cho chuẩn (dùng final)
+    private final AccountRepository accountRepository;
+    private final IAccountService accountService; // Giữ 1 service
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService; // <-- TIÊM JWT SERVICE
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody AccountDto accountDto) {
@@ -56,10 +57,17 @@ public class AccountController {
             if (passwordEncoder.matches(accountDto.getPassword(), account.getPassword())) {
 
                 if ("Active".equalsIgnoreCase(account.getStatus())) {
+
+                    // === TẠO TOKEN SAU KHI ĐĂNG NHẬP THÀNH CÔNG ===
+                    String token = jwtService.generateToken(account.getAccountId(), account.getRole());
+                    // =============================================
+
                     response.put("statusCode", "200");
                     response.put("statusMsg", "Login successful");
                     response.put("accountId", account.getAccountId());
                     response.put("role", account.getRole());
+                    response.put("token", token); // <-- TRẢ TOKEN VỀ CHO FRONTEND
+
                     return ResponseEntity.status(HttpStatus.OK).body(response);
                 } else {
                     response.put("statusCode", "403");
@@ -83,7 +91,7 @@ public class AccountController {
     @PostMapping("/create")
     public ResponseEntity<Map<String, Object>> createAccount(@RequestBody AccountDto accountDto) {
         try {
-            Account createdAccount = iAccountService.createAccount(accountDto);
+            Account createdAccount = accountService.createAccount(accountDto);
             Map<String, Object> response = new HashMap<>();
             response.put("statusCode", AccountConstants.STATUS_201);
             response.put("statusMsg", AccountConstants.MESSAGE_201);
@@ -104,7 +112,7 @@ public class AccountController {
 
     @GetMapping("/fetch")
     public ResponseEntity<InformationDto> fetchAccountInformation(@RequestParam String accountId){
-        InformationDto informationDto = iAccountService.fetchInformation(accountId);
+        InformationDto informationDto = accountService.fetchInformation(accountId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(informationDto);
@@ -112,7 +120,7 @@ public class AccountController {
 
     @PutMapping("/update-information")
     public  ResponseEntity<ResponseDto> updateInformation(@RequestParam String accountId, @RequestBody InformationDto informationDto){
-        boolean isUpdated = iAccountService.updateInformation(accountId, informationDto);
+        boolean isUpdated = accountService.updateInformation(accountId, informationDto);
         if(isUpdated){
             return ResponseEntity
                     .status(HttpStatus.OK)
@@ -127,7 +135,7 @@ public class AccountController {
 
     @DeleteMapping("/delete")
     public ResponseEntity<ResponseDto> deleteAccount(@RequestParam String accountId){
-        boolean isDeleted = iAccountService.deleteAccount(accountId);
+        boolean isDeleted = accountService.deleteAccount(accountId);
         if(isDeleted){
             return ResponseEntity
                     .status(HttpStatus.OK)
@@ -145,7 +153,7 @@ public class AccountController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<AccountDto> accounts = iAccountService.getAllAccounts(page, size);
+            Page<AccountDto> accounts = accountService.getAllAccounts(page, size);
             return ResponseEntity.ok(accounts);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
@@ -157,7 +165,7 @@ public class AccountController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<InformationDto> informationList = iAccountService.getAllInformation(page, size);
+            Page<InformationDto> informationList = accountService.getAllInformation(page, size);
             return ResponseEntity.ok(informationList);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Page.empty());
@@ -166,7 +174,7 @@ public class AccountController {
 
     @PutMapping("/update-account")
     public ResponseEntity<ResponseDto> updateAccount(@RequestParam String accountId, @RequestBody AccountDto accountDto) {
-        boolean isUpdated = iAccountService.updateAccount(accountId, accountDto);
+        boolean isUpdated = accountService.updateAccount(accountId, accountDto);
         if (isUpdated) {
             return ResponseEntity
                     .status(HttpStatus.OK)
@@ -206,7 +214,7 @@ public class AccountController {
     }
     @PutMapping("/activate")
     public ResponseEntity<ResponseDto> activateAccount(@RequestParam String accountId) {
-        boolean isActivated = iAccountService.activateAccount(accountId);
+        boolean isActivated = accountService.activateAccount(accountId);
         if (isActivated) {
             return ResponseEntity
                     .status(HttpStatus.OK)
@@ -263,7 +271,7 @@ public class AccountController {
 
     @GetMapping("/export_informations")
     public ResponseEntity<Resource> exportInformations() throws IOException {
-        AccountController informationService;
+        // AccountController informationService; // <-- Dòng này thừa, xóa đi
         ByteArrayInputStream in = accountService.exportInformations();
         InputStreamResource file = new InputStreamResource(in);
 
@@ -273,5 +281,4 @@ public class AccountController {
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
-
 }

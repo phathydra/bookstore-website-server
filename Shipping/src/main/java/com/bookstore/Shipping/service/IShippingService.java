@@ -20,4 +20,5 @@ public interface IShippingService {
     Optional<DeliveryUnit> getDeliveryUnitById(String deliveryUnitId);
     Optional<ShipInfor> getShipInforByShipperId(String shipperId);
     Optional<ShipInfor> updateShipInfor(String shipperId, ShipInfor updatedInfo);
+    List<DeliveryUnit> getDeliveryUnitsByUnit(String unit);
 }

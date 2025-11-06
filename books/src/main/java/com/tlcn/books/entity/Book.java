@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.*;
 import java.util.List;
+import org.springframework.data.mongodb.core.index.Indexed;
 
 @Document(collection = "books")
 @Getter
@@ -42,4 +43,7 @@ public class Book {
 
     public void setImportPrice(Double importPrice) {
     }
+
+    @Indexed
+    private List<String> tags; // Ví dụ: ["HOT_SELLER", "COLD_SELLER", "LOW_STOCK"]
 }

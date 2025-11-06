@@ -7,6 +7,9 @@ import com.bookstore.Shipping.service.IShipperTrackingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+// ✅ THÊM IMPORT
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -23,6 +26,14 @@ public class ShipperTrackingServiceImpl implements IShipperTrackingService {
                     shipInfor.setLatitude(latitude);
                     shipInfor.setLongitude(longitude);
                     shipInfor.setLastUpdated(LocalDateTime.now());
+
+                    // ✅ CẬP NHẬT TRƯỜNG GEOJSONPOINT
+                    // Quan trọng: GeoJsonPoint lưu (longitude, latitude)
+                    if (longitude != null && latitude != null) {
+                        shipInfor.setCurrentLocation(new GeoJsonPoint(longitude, latitude));
+                    } else {
+                        shipInfor.setCurrentLocation(null); // Xóa vị trí nếu không hợp lệ
+                    }
 
                     // thêm lịch sử
                     shipInfor.getRouteHistory().add(new LocationPoint(latitude, longitude, LocalDateTime.now()));

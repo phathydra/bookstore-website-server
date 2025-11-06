@@ -93,6 +93,10 @@ public class BookServiceImpl implements IBookService {
         if (bookDto.getBookImages() != null && !bookDto.getBookImages().isEmpty()) {
             existingBook.setBookImages(bookDto.getBookImages());
         }
+        // DÒNG CODE BỊ THIẾU LÀ ĐÂY
+        if (bookDto.getMainCategory() != null && !bookDto.getMainCategory().trim().isEmpty()) {
+            existingBook.setMainCategory(bookDto.getMainCategory());
+        }
         if (bookDto.getBookCategory() != null && !bookDto.getBookCategory().trim().isEmpty()) {
             existingBook.setBookCategory(bookDto.getBookCategory());
         }
@@ -748,16 +752,50 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public List<BookDetailForOrderDto> getBookDetailsByIds(List<String> bookIds) {
+    public List<BookDataForCartDto> getBookDetailsByIds(List<String> bookIds) {
         // 1. Tìm tất cả các sách theo danh sách bookId
         List<Book> books = bookRepository.findAllById(bookIds);
+        LocalDate currDate = LocalDate.now(); // Dùng để kiểm tra discount còn hạn
 
-        // 2. Chuyển đổi sang BookDetailForOrderDto
+        // 2. Chuyển đổi sang BookDataForCartDto và TÍNH TOÁN LẠI GIÁ
         return books.stream()
-                .map(book -> new BookDetailForOrderDto(
-                        book.getBookId(),
-                        book.getBookCategory()
-                ))
+                .map(book -> {
+                    Double finalPrice = book.getBookPrice(); // Bắt đầu bằng giá gốc
+
+                    // (Logic tính discount cũ của bạn... giữ nguyên)
+                    Optional<BookDiscount> bookDiscountOpt =
+                            bookDiscountRepository.findByBookId(book.getBookId());
+
+                    if (bookDiscountOpt.isPresent()) {
+                        Optional<Discount> discountOpt =
+                                discountRepository.findById(bookDiscountOpt.get().getDiscountId());
+
+                        if (discountOpt.isPresent()) {
+                            Discount discount = discountOpt.get();
+                            LocalDate startDate = discount.getStartDate().toInstant()
+                                    .atZone(ZoneId.systemDefault()).toLocalDate();
+                            LocalDate endDate = discount.getEndDate().toInstant()
+                                    .atZone(ZoneId.systemDefault()).toLocalDate();
+
+                            if ((startDate.isEqual(currDate) || startDate.isBefore(currDate)) &&
+                                    (endDate.isEqual(currDate) || endDate.isAfter(currDate))) {
+                                finalPrice = Math.ceil(book.getBookPrice() * (1 - discount.getPercentage() / 100.0));
+                            }
+                        }
+                    }
+                    // --- Hết logic discount ---
+
+                    // 3. Trả về DTO MỚI với đầy đủ thông tin
+                    return new BookDataForCartDto(
+                            book.getBookId(),
+                            book.getBookName(),
+                            book.getBookImages(),
+                            finalPrice, // Giá cuối cùng (gốc hoặc đã giảm)
+                            book.getBookAuthor(), // MỚI
+                            book.getMainCategory(), // MỚI
+                            book.getTags() // MỚI
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -770,5 +808,42 @@ public class BookServiceImpl implements IBookService {
         return allBooks.stream()
                 .map(book -> BookMapper.mapToBookDetailDto(book, new BookDetailDto()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void updateTags(Map<String, List<String>> tagUpdates) {
+        // 1. Xóa các tag "động" cũ (do scheduler quản lý)
+        List<String> dynamicTags = List.of("HOT_SELLER", "COLD_SELLER", "CONSISTENT_SELLER");
+        bookRepository.removeAllTags(dynamicTags);
+
+        // 2. Cập nhật các tag mới từ map (do orders-service gửi qua)
+        if (tagUpdates != null) {
+            tagUpdates.forEach((tag, bookIds) -> {
+                if (bookIds != null && !bookIds.isEmpty()) {
+                    bookRepository.addTagToBooks(tag, bookIds);
+                }
+            });
+        }
+
+        // 3. Tự quản lý các tag "nội bộ" (ví dụ: Tồn kho)
+        int lowStockThreshold = 10;
+        bookRepository.addTagForLowStock("LOW_STOCK", lowStockThreshold);
+        bookRepository.removeTagForStockOk("LOW_STOCK", lowStockThreshold);
+    }
+
+    @Override
+    public List<Book> findAllByIds(List<String> bookIds) {
+        // Chỉ cần gọi thẳng hàm có sẵn của repository
+        return bookRepository.findAllById(bookIds);
+    }
+
+    @Override
+    public Page<BookWithDiscountDto> getBooksByAuthor(String author, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Book> books = bookRepository.findByBookAuthorIgnoreCase(author, pageable);
+
+        // Tái sử dụng hàm mapBookToBookWithDiscountDto bạn đã viết
+        return books.map(this::mapBookToBookWithDiscountDto);
     }
 }
