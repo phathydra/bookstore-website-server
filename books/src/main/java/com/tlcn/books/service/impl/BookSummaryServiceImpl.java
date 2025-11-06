@@ -26,7 +26,7 @@ public class BookSummaryServiceImpl implements IBookSummaryService {
 
     @Override
     public BookSummaryResponseDto getBookSummary(String title, String author) {
-        String prompt = "Hãy viết một bản tóm tắt chi tiết (~1000 chữ) cho cuốn sách \""
+        String prompt = "Hãy viết một bản tóm tắt chi tiết (~500 chữ) cho cuốn sách \""
                 + title + "\" của tác giả " + author
                 + ". Tóm tắt phải đầy đủ cốt truyện, nhân vật chính, chủ đề và thông điệp chính. "
                 + "Chỉ trả về văn bản tóm tắt, không thêm bất kỳ giải thích hoặc ghi chú nào khác.";

@@ -2,6 +2,7 @@ package com.tlcn.books.controller;
 
 import com.tlcn.books.constants.BookConstants;
 import com.tlcn.books.dto.*;
+import com.tlcn.books.entity.Book;
 import com.tlcn.books.exception.ResourceNotFoundException;
 import com.tlcn.books.service.IBookService;
 import jakarta.validation.Valid;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Collections;
+import java.util.Map;
 
 
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, exposedHeaders = "Content-Disposition")
@@ -357,9 +359,10 @@ public class BookController {
     }
 
     @PostMapping("/details-by-ids")
-    public ResponseEntity<List<BookDetailForOrderDto>> getBookDetailsByIds(@RequestBody List<String> bookIds) {
+    public ResponseEntity<List<BookDataForCartDto>> getBookDetailsByIds(@RequestBody List<String> bookIds) { // Sửa kiểu trả về
         try {
-            List<BookDetailForOrderDto> details = iBookService.getBookDetailsByIds(bookIds);
+            // Service đã được cập nhật và sẽ trả về đúng kiểu
+            List<BookDataForCartDto> details = iBookService.getBookDetailsByIds(bookIds); // Sửa kiểu biến
             return ResponseEntity.ok(details);
         } catch (Exception e) {
             System.err.println("Error fetching book details by IDs: " + e.getMessage());
@@ -378,6 +381,35 @@ public class BookController {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.emptyList());
+        }
+    }
+
+    @PostMapping("/internal/update-tags")
+    public ResponseEntity<Void> updateBookTags(@RequestBody Map<String, List<String>> tagUpdates) {
+        iBookService.updateTags(tagUpdates);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/by-ids")
+    public ResponseEntity<List<Book>> getBooksByIds(@RequestBody List<String> bookIds) {
+        // Bạn cần tạo hàm này trong BookServiceImpl
+        // Nó chỉ cần gọi: bookRepository.findAllById(bookIds)
+        List<Book> books = iBookService.findAllByIds(bookIds);
+        return ResponseEntity.ok(books);
+    }
+
+    @GetMapping("/author/{authorName}")
+    public ResponseEntity<Page<BookWithDiscountDto>> getBooksByAuthor(
+            @PathVariable String authorName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<BookWithDiscountDto> books = iBookService.getBooksByAuthor(authorName, page, size);
+            return ResponseEntity.ok(books);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
         }
     }
 }

@@ -4,7 +4,10 @@ import com.bookstore.Shipping.dto.ShippingDto;
 import com.bookstore.Shipping.entity.DeliveryUnit;
 import com.bookstore.Shipping.entity.ShipInfor;
 import com.bookstore.Shipping.entity.Shipping;
+import com.bookstore.Shipping.repository.DeliveryUnitRepository;
+import com.bookstore.Shipping.service.IShippingAssignmentService;
 import com.bookstore.Shipping.service.IShippingService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +19,13 @@ import java.util.Optional;
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, exposedHeaders = "Content-Disposition")
 @RestController
 @RequestMapping("/api/shipping")
+@RequiredArgsConstructor
 public class ShippingController {
 
     @Autowired
     private IShippingService shippingService;
+    private final DeliveryUnitRepository deliveryUnitRepository;
+    private final IShippingAssignmentService shippingAssignmentService;
 
     @PostMapping("/create")
     // Đổi tên phương thức để phản ánh việc tạo account chung hơn
@@ -91,5 +97,20 @@ public class ShippingController {
         return shippingService.updateShipInfor(shipperId, updatedInfo)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/nearby/{deliveryUnitId}")
+    public ResponseEntity<List<ShipInfor>> getNearbyShippers(
+            @PathVariable String deliveryUnitId,
+            @RequestParam(defaultValue = "5") double maxRadiusKm
+    ) {
+        // 1. Lấy địa chỉ của Hub từ ID
+        DeliveryUnit hub = deliveryUnitRepository.findByDeliveryUnitId(deliveryUnitId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Hub: " + deliveryUnitId));
+        String hubAddress = hub.getBranchAddress();
+
+        // 2. Gọi service mà bạn đã tạo
+        List<ShipInfor> shippers = shippingAssignmentService.findNearbyShippers(hubAddress, maxRadiusKm);
+        return ResponseEntity.ok(shippers);
     }
 }

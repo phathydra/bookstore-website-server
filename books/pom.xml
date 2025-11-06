@@ -7,8 +7,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.4.2</version>
-		<relativePath/> <!-- lookup parent from repository -->
-	</parent>
+		<relativePath/> </parent>
 
 	<groupId>com.tlcn</groupId>
 	<artifactId>books</artifactId>
@@ -16,11 +15,11 @@
 	<name>books</name>
 	<description>Microservice for books</description>
 
-    <properties>
-        <java.version>17</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-    </properties>
+	<properties>
+		<java.version>17</java.version>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -45,13 +44,10 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-		<!-- Sửa lại CRaC để tải đúng -->
 		<dependency>
 			<groupId>org.crac</groupId>
 			<artifactId>crac</artifactId>
-			<version>1.5.0</version> <!-- Sử dụng 1.7.0 vì 1.8.0 chưa có -->
-		</dependency>
-		<!-- Thêm Lombok -->
+			<version>1.5.0</version> </dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -73,10 +69,32 @@
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.8.0</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-api</artifactId>
+			<version>0.11.5</version>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-impl</artifactId>
+			<version>0.11.5</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.jsonwebtoken</groupId>
+			<artifactId>jjwt-jackson</artifactId>
+			<version>0.11.5</version>
+			<scope>runtime</scope>
+		</dependency>
 	</dependencies>
 
 	<repositories>
-		<!-- Thêm repository của OpenJDK để tải CRaC -->
 		<repository>
 			<id>openjdk</id>
 			<url>https://packages.adoptium.net/artifactory/maven</url>
@@ -85,7 +103,6 @@
 
 	<build>
 		<plugins>
-			<!-- Cấu hình plugin biên dịch Maven -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -111,7 +128,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			<!-- Thêm maven-surefire-plugin để bỏ qua test -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>

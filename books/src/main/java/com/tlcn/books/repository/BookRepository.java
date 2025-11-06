@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.data.mongodb.repository.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
@@ -108,5 +109,39 @@ public interface BookRepository extends MongoRepository<Book, String> {
 
     List<Book> findTop5ByOrderByBookNameAsc();
     Optional<Book> findByBookNameIgnoreCaseAndBookAuthorIgnoreCase(String bookName, String bookAuthor);
+
+    // Xóa 1 tag cụ thể khỏi TẤT CẢ sách
+    @Query("{}")
+    @Update("{$pull: {tags: {$in: ?0}}}")
+    void removeAllTags(List<String> tags);
+
+    // Thêm 1 tag cho danh sách bookId
+    @Query("{bookId: {$in: ?1}}")
+    @Update("{$addToSet: {tags: ?0}}")
+    void addTagToBooks(String tag, List<String> bookIds);
+
+    // Gắn tag cho sách tồn kho thấp
+    @Query("{bookStockQuantity: {$lt: ?1}}")
+    @Update("{$addToSet: {tags: ?0}}")
+    void addTagForLowStock(String tag, int threshold);
+
+    @Query("{bookStockQuantity: {$gte: ?1}}")
+    @Update("{$pull: {tags: ?0}}")
+    void removeTagForStockOk(String tag, int threshold);
+
+    // ===== THÊM PHƯƠNG THỨC MỚI NÀY =====
+    /**
+     * Lấy sách cùng với phần trăm giảm giá (nếu có) bằng LEFT JOIN.
+     * Trả về Page<Object[]>, trong đó:
+     * - result[0] = Book (Entity)
+     * - result[1] = Double (Percentage)
+     */
+    @Query("SELECT b, d.percentage " +
+            "FROM Book b " +
+            "LEFT JOIN BookDiscount bd ON b.bookId = bd.bookId " +
+            "LEFT JOIN Discount d ON bd.discountId = d.discountId")
+    Page<Object[]> findAllWithDiscountPercentage(Pageable pageable);
+
+    Page<Book> findByBookAuthorIgnoreCase(String bookAuthor, Pageable pageable);
 }
 
