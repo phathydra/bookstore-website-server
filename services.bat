@@ -22,6 +22,7 @@ cd ..
 
 cd RAG
 rag.py
+cd ..
 
 exit
 
