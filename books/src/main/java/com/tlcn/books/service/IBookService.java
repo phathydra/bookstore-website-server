@@ -1,12 +1,14 @@
 package com.tlcn.books.service;
 
 import com.tlcn.books.dto.*;
+import com.tlcn.books.entity.Book;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface IBookService {
 
@@ -56,6 +58,9 @@ public interface IBookService {
     ByteArrayInputStream exportBooksInStock() throws IOException;
     ByteArrayInputStream exportBooksOutOfStock() throws IOException;
     void importStock(List<BookDto> booksToImport);
-    List<BookDetailForOrderDto> getBookDetailsByIds(List<String> bookIds);
+    List<BookDataForCartDto> getBookDetailsByIds(List<String> bookIds);
     List<BookDetailDto> getAllBookDetails();
+    void updateTags(Map<String, List<String>> tagUpdates);
+    List<Book> findAllByIds(List<String> bookIds);
+    Page<BookWithDiscountDto> getBooksByAuthor(String author, int page, int size);
 }

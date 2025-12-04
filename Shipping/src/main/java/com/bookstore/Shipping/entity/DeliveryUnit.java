@@ -17,4 +17,5 @@ public class DeliveryUnit {
     private String email;
     private String phone;
     private String branchAddress;
+    private String unit;
 }

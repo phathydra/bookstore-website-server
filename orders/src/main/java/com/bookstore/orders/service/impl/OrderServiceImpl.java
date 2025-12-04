@@ -85,26 +85,21 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
-    // ĐÃ SỬA: Thêm Constructor và @JsonProperty để ánh xạ tồn kho
     public static class BookDetailDto {
         private String id;
         private String bookName;
         private String categoryName;
 
-        // SỬA LỖI TỒN KHO: Ánh xạ từ 'bookStockQuantity' sang 'stockQuantity'
         @JsonProperty("bookStockQuantity")
         private int stockQuantity;
 
-        // 1. NO-ARGS CONSTRUCTOR (Cần cho Jackson/RestTemplate)
         public BookDetailDto() {}
 
-        // 2. CONSTRUCTOR 2 THAM SỐ (Sửa lỗi 'Cannot resolve constructor')
         public BookDetailDto(String id, String bookName) {
             this.id = id;
             this.bookName = bookName;
         }
 
-        // 3. CONSTRUCTOR ALL-ARGS (Nếu cần khởi tạo đầy đủ)
         public BookDetailDto(String id, String bookName, String categoryName, int stockQuantity) {
             this.id = id;
             this.bookName = bookName;
@@ -126,39 +121,114 @@ public class OrderServiceImpl implements IOrderService {
     // --- End Helper DTOs ---
 
 
+    // ----------------------------------------------------------------
+    // --- BẮT ĐẦU PHẦN SỬA LỖI `cannot find symbol` ---
+    // ----------------------------------------------------------------
     @Override
     @Transactional
     public Order createOrder(OrderDto orderDto) {
+
+        // Chuyển DTO thành Entity, nhưng *chưa* lưu vào DB
         Order order = orderMapper.toEntity(orderDto);
-        Order savedOrder = orderRepository.save(order);
-        String accountId = savedOrder.getAccountId();
+        String accountId = order.getAccountId();
 
-        for (OrderItem item : savedOrder.getOrderItems()) {
-            String bookId = item.getBookId();
-            int quantity = item.getQuantity();
+        // Lưu các sách đã trừ kho (để rollback nếu có lỗi)
+        List<String> processedBookIds = new ArrayList<>();
 
-            String url = UriComponentsBuilder.fromHttpUrl(bookServiceBaseUrl)
-                    .path("/api/book/")
-                    .path(bookId)
-                    .path("/decrease-stock")
-                    .build()
-                    .toUriString();
+        try {
+            // STEP 1: XỬ LÝ KHO (DECREASE STOCK) VÀ XÓA GIỎ HÀNG (CLEAR CART)
+            // Lặp qua tất cả các mặt hàng
+            for (OrderItem item : order.getOrderItems()) {
+                String bookId = item.getBookId();
+                int quantity = item.getQuantity();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            DecreaseStockRequest requestEntity = new DecreaseStockRequest(quantity);
+                // 1.1 Gọi API trừ kho của Book-Service
+                String decreaseUrl = buildBookServiceUrl(bookId, "/decrease-stock");
+                restTemplate.exchange(
+                        decreaseUrl,
+                        HttpMethod.PUT,
+                        new HttpEntity<>(new DecreaseStockRequest(quantity), buildJsonHeaders()),
+                        Void.class
+                );
 
-            iCartService.removeItem(accountId, bookId);
+                // 1.2 Nếu trừ kho thành công, thêm vào danh sách đã xử lý
+                processedBookIds.add(bookId);
 
+                // 1.3 Gọi API xóa 1 item khỏi giỏ hàng
+                // (Đây là phần sửa lại, dùng `removeItem` thay vì `removeItems`)
+                iCartService.removeItem(accountId, bookId);
+            }
+
+
+            // STEP 2: LƯU ĐƠN HÀNG (SAVE ORDER)
+            // Chỉ chạy khi KHO và GIỎ HÀNG đều đã xử lý thành công
+            return orderRepository.save(order);
+
+        } catch (Exception e) {
+            // STEP 3: HOÀN TÁC KHO (COMPENSATING TRANSACTION)
+            // Nếu có bất kỳ lỗi nào xảy ra (hết hàng, service sập, lỗi giỏ hàng...)
+            // Chúng ta cần cộng lại số lượng kho cho những sách đã lỡ trừ
+            System.err.println("Xảy ra lỗi khi tạo đơn hàng. Bắt đầu hoàn tác kho...");
+            compensateStock(processedBookIds, order.getOrderItems());
+
+            // Ném lỗi ra ngoài để báo cho client
+            throw new RuntimeException("Không thể tạo đơn hàng, đã hoàn tác kho: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Helper: Thực hiện giao dịch bù (cộng lại kho) khi có lỗi
+     * (Yêu cầu Book-Service phải có endpoint /increase-stock)
+     */
+    private void compensateStock(List<String> processedBookIds, List<OrderItem> allItems) {
+        // Tạo một map để lấy số lượng cần hoàn tác
+        Map<String, Integer> quantityMap = allItems.stream()
+                .collect(Collectors.toMap(OrderItem::getBookId, OrderItem::getQuantity));
+
+        for (String bookId : processedBookIds) {
             try {
-                restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(requestEntity, headers), Void.class);
-            } catch (Exception e) {
-                throw new RuntimeException("Lỗi khi gọi book service để giảm số lượng sách: " + e.getMessage());
+                String increaseUrl = buildBookServiceUrl(bookId, "/increase-stock");
+                int quantity = quantityMap.getOrDefault(bookId, 0);
+
+                if (quantity > 0) {
+                    restTemplate.exchange(
+                            increaseUrl,
+                            HttpMethod.PUT,
+                            new HttpEntity<>(new DecreaseStockRequest(quantity), buildJsonHeaders()),
+                            Void.class
+                    );
+                }
+            } catch (Exception compEx) {
+                // Lỗi nghiêm trọng: Không thể hoàn tác kho. Cần admin can thiệp thủ công.
+                System.err.println("!!! LỖI NGHIÊM TRỌNG: KHÔNG THỂ HOÀN TÁC KHO cho bookId " + bookId + ". Cần can thiệp thủ công!!! Lỗi: " + compEx.getMessage());
             }
         }
-
-        return savedOrder;
     }
+
+    /**
+     * Helper: Xây dựng URL gọi đến Book-Service
+     */
+    private String buildBookServiceUrl(String bookId, String path) {
+        return UriComponentsBuilder.fromHttpUrl(bookServiceBaseUrl)
+                .path("/api/book/")
+                .path(bookId)
+                .path(path)
+                .build()
+                .toUriString();
+    }
+
+    /**
+     * Helper: Tạo JSON headers
+     */
+    private HttpHeaders buildJsonHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+    // ----------------------------------------------------------------
+    // --- KẾT THÚC PHẦN SỬA LỖI ---
+    // ----------------------------------------------------------------
+
 
     @Override
     public List<Order> getOrdersByAccountId(String accountId) {
@@ -314,7 +384,6 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public List<OrderStatusDto> getOrderStatusCounts(Date startDate, Date endDate) {
-        // 1. Tạo một Criteria để lọc theo ngày tháng
         Criteria dateCriteria = new Criteria();
         if (startDate != null && endDate != null) {
             dateCriteria.and("dateOrder").gte(startDate).lte(endDate);
@@ -324,26 +393,21 @@ public class OrderServiceImpl implements IOrderService {
             dateCriteria.and("dateOrder").lte(endDate);
         }
 
-        // 2. Thêm một bước aggregation "match" nếu có điều kiện lọc
         MatchOperation matchOperation = Aggregation.match(dateCriteria);
 
-        // 3. Nhóm các tài liệu theo trường 'shippingStatus'
         GroupOperation groupOperation = Aggregation.group("shippingStatus")
                 .count().as("count");
 
-        // 4. Định hình lại đầu ra
         ProjectionOperation projectionOperation = Aggregation.project()
                 .and("_id").as("status")
                 .and("count").as("count");
 
-        // 5. Kết hợp các bước aggregation
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 groupOperation,
                 projectionOperation
         );
 
-        // 6. Thực thi aggregation
         AggregationResults<OrderStatusDto> results = mongoTemplate.aggregate(
                 aggregation,
                 "orders",
@@ -355,10 +419,7 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public long getTotalOrderCount(Date startDate, Date endDate) {
-        // TẠO MỘT ĐỐI TƯỢNG Query TRỐNG
         Query query = new Query();
-
-        // TẠO MỘT ĐỐI TƯỢNG Criteria ĐỂ CHỨA CÁC ĐIỀU KIỆN
         Criteria criteria = new Criteria();
         if (startDate != null && endDate != null) {
             criteria.and("dateOrder").gte(startDate).lte(endDate);
@@ -367,16 +428,12 @@ public class OrderServiceImpl implements IOrderService {
         } else if (endDate != null) {
             criteria.and("dateOrder").lte(endDate);
         }
-
-        // Gắn đối tượng Criteria đã xây dựng vào Query
         query.addCriteria(criteria);
-
         return mongoTemplate.count(query, Order.class);
     }
 
     @Override
     public double getTotalRevenue(Date startDate, Date endDate) {
-        // 1. Bước Match: Lọc các tài liệu theo khoảng thời gian
         Criteria dateCriteria = new Criteria();
         if (startDate != null && endDate != null) {
             dateCriteria.and("dateOrder").gte(startDate).lte(endDate);
@@ -387,36 +444,29 @@ public class OrderServiceImpl implements IOrderService {
         }
         MatchOperation matchOperation = Aggregation.match(dateCriteria);
 
-        // 2. Bước Group: Nhóm tất cả các tài liệu đã lọc thành một nhóm duy nhất
-        // và tính tổng giá trị của trường 'totalPrice'
         GroupOperation groupOperation = Aggregation.group()
                 .sum("totalPrice").as("totalRevenue");
 
-        // 3. Xây dựng pipeline aggregation
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 groupOperation
         );
 
-        // 4. Thực thi aggregation và lấy kết quả
         AggregationResults<Document> results = mongoTemplate.aggregate(
                 aggregation,
                 "orders",
                 Document.class
         );
 
-        // 5. Trích xuất giá trị tổng doanh thu
         Document resultDocument = results.getUniqueMappedResult();
         if (resultDocument != null && resultDocument.containsKey("totalRevenue")) {
             return resultDocument.getDouble("totalRevenue");
         }
-
-        return 0.0; // Trả về 0 nếu không có kết quả
+        return 0.0;
     }
 
     @Override
     public List<RevenueByMonthDto> getRevenueByMonth(Date startDate, Date endDate) {
-        // XỬ LÝ TRƯỜNG HỢP startDate VÀ endDate LÀ null
         LocalDate startLocalDate;
         LocalDate endLocalDate;
 
@@ -424,12 +474,10 @@ public class OrderServiceImpl implements IOrderService {
             startLocalDate = startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
             endLocalDate = endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         } else {
-            // Nếu không có ngày được chọn, lấy dữ liệu từ đầu năm đến ngày hiện tại
             startLocalDate = LocalDate.now().withDayOfYear(1);
             endLocalDate = LocalDate.now();
         }
 
-        // 1. Tạo một danh sách đầy đủ tất cả các tháng giữa startDate và endDate, với doanh thu = 0
         List<RevenueByMonthDto> fullMonthList = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
 
@@ -439,7 +487,6 @@ public class OrderServiceImpl implements IOrderService {
             current = current.plusMonths(1);
         }
 
-        // 2. Chạy pipeline aggregation để lấy doanh thu từ MongoDB
         Criteria dateCriteria = new Criteria();
         if (startDate != null && endDate != null) {
             dateCriteria.and("dateOrder").gte(startDate).lte(endDate);
@@ -475,7 +522,6 @@ public class OrderServiceImpl implements IOrderService {
                         doc -> doc.getDouble("totalRevenue")
                 ));
 
-        // 3. Cập nhật doanh thu cho danh sách đầy đủ
         fullMonthList.forEach(monthDto -> {
             if (revenueMap.containsKey(monthDto.getPeriod())) {
                 monthDto.setTotalRevenue(revenueMap.get(monthDto.getPeriod()));
@@ -487,7 +533,6 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public long getUniqueCustomerCount(Date startDate, Date endDate) {
-        // 1. Match: Lọc các đơn hàng theo khoảng thời gian
         Criteria dateCriteria = new Criteria();
         if (startDate != null && endDate != null) {
             dateCriteria.and("dateOrder").gte(startDate).lte(endDate);
@@ -498,27 +543,21 @@ public class OrderServiceImpl implements IOrderService {
         }
         MatchOperation matchOperation = Aggregation.match(dateCriteria);
 
-        // 2. Group: Nhóm theo tên trường chính xác: "accountId" (chữ 'a' thường)
         GroupOperation uniqueIdGroup = Aggregation.group("accountId");
-
-        // 3. Count: Đếm số lượng khách hàng duy nhất
         GroupOperation countGroup = Aggregation.group().count().as("uniqueCustomerCount");
 
-        // Xây dựng pipeline aggregation
         Aggregation aggregation = Aggregation.newAggregation(
                 matchOperation,
                 uniqueIdGroup,
                 countGroup
         );
 
-        // Thực thi aggregation
         AggregationResults<Document> results = mongoTemplate.aggregate(
                 aggregation,
-                "orders", // Tên collection của bạn
+                "orders",
                 Document.class
         );
 
-        // Lấy kết quả
         Document result = results.getUniqueMappedResult();
         if (Objects.nonNull(result) && Objects.nonNull(result.get("uniqueCustomerCount"))) {
             return ((Number) result.get("uniqueCustomerCount")).longValue();
@@ -528,7 +567,7 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public List<BestSellingBookDto> getTop5BestSellingCategories(Date startDate, Date endDate) {
-        // 1. Xây dựng Criteria lọc theo ngày và trạng thái
+        // 1. Xây dựng Criteria lọc
         Criteria dateCriteria = new Criteria();
         if (startDate != null && endDate != null) {
             dateCriteria.and("dateOrder").gte(startDate).lte(endDate);
@@ -541,7 +580,7 @@ public class OrderServiceImpl implements IOrderService {
         Criteria combinedCriteria = new Criteria().andOperator(dateCriteria, statusCriteria);
         MatchOperation matchOperation = Aggregation.match(combinedCriteria);
 
-        // --- BƯỚC 1: Lọc và Nhóm theo bookId để lấy tổng số lượng bán được của MỖI sách ---
+        // 2. Aggregation lấy tổng số lượng bán của MỖI sách
         Aggregation bookSalesAggregation = Aggregation.newAggregation(
                 matchOperation,
                 Aggregation.unwind("orderItems"),
@@ -563,12 +602,12 @@ public class OrderServiceImpl implements IOrderService {
             return Collections.emptyList();
         }
 
-        // 2. Lấy danh sách tất cả các bookId duy nhất
+        // 3. Lấy danh sách bookId
         List<String> bookIds = salesByBook.stream()
                 .map(doc -> doc.getString("bookId"))
                 .collect(Collectors.toList());
 
-        // 3. Gọi Book Service để lấy Category Name cho tất cả các sách
+        // 4. Gọi Book Service lấy chi tiết sách
         String url = bookServiceBaseUrl + "/api/book/details-by-ids";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -591,16 +630,22 @@ public class OrderServiceImpl implements IOrderService {
             return Collections.emptyList();
         }
 
+        // 5. SỬA LỖI 500: Lọc ra category null TRƯỚC KHI tạo Map
         Map<String, String> bookIdToCategoryMap = Arrays.stream(bookDetailsArray)
-                .collect(Collectors.toMap(BookDetailDto::getId, BookDetailDto::getCategoryName));
+                .filter(book -> book.getCategoryName() != null && !book.getCategoryName().isEmpty())
+                .collect(Collectors.toMap(
+                        BookDetailDto::getId,
+                        BookDetailDto::getCategoryName,
+                        (existingValue, newValue) -> existingValue
+                ));
 
 
-        // 4. Nhóm theo Category và tính tổng số lượng bán
+        // 6. Nhóm theo Category và tính tổng
         Map<String, Long> salesByCategory = new HashMap<>();
-
         for (Document doc : salesByBook) {
             String bookId = doc.getString("bookId");
             Long totalSold = ((Number) doc.get("totalSold")).longValue();
+
             String categoryName = bookIdToCategoryMap.get(bookId);
 
             if (categoryName != null) {
@@ -608,7 +653,7 @@ public class OrderServiceImpl implements IOrderService {
             }
         }
 
-        // 5. Chuyển đổi sang DTO, sắp xếp và lấy Top 5
+        // 7. Sắp xếp và lấy Top 5
         return salesByCategory.entrySet().stream()
                 .map(entry -> new BestSellingBookDto(
                         null,
@@ -619,11 +664,10 @@ public class OrderServiceImpl implements IOrderService {
                 .collect(Collectors.toList());
     }
 
+
     @Override
     public Page<BestSellingBookDto> getWorstSellingBooksPaginated(Date startDate, Date endDate, int page, int size) {
-
-        // 1. TÍNH TOÁN SỐ LIỆU BÁN HÀNG TỪ MONGO (KHÔNG THAY ĐỔI)
-        // Xây dựng MatchOperation
+        // 1. Lấy dữ liệu bán hàng từ Mongo
         Criteria dateCriteria = new Criteria();
         if (startDate != null && endDate != null) {
             dateCriteria.and("dateOrder").gte(startDate).lte(endDate);
@@ -636,7 +680,6 @@ public class OrderServiceImpl implements IOrderService {
         Criteria combinedCriteria = new Criteria().andOperator(dateCriteria, statusCriteria);
         MatchOperation matchOperation = Aggregation.match(combinedCriteria);
 
-        // Aggregation chỉ để lấy tổng số lượng bán trong khoảng thời gian
         Aggregation bookSalesAggregation = Aggregation.newAggregation(
                 matchOperation,
                 Aggregation.unwind("orderItems"),
@@ -660,7 +703,7 @@ public class OrderServiceImpl implements IOrderService {
                         doc -> doc
                 ));
 
-        // 2. GỌI BOOK SERVICE LẤY TẤT CẢ SÁCH (Sử dụng logic RestTemplate như cũ)
+        // 2. Lấy TẤT CẢ sách từ Book Service
         String url = bookServiceBaseUrl + "/api/book/all-details";
         BookDetailDto[] allBooksArray;
         try {
@@ -679,26 +722,23 @@ public class OrderServiceImpl implements IOrderService {
             return Page.empty();
         }
 
-        // 3. KẾT HỢP DỮ LIỆU, LỌC SÁCH BÁN DƯỚI 10, SẮP XẾP
+        // 3. Kết hợp dữ liệu, lọc (bán < 10) và sắp xếp
         List<BestSellingBookDto> allWorstSellingBooks = Arrays.stream(allBooksArray)
                 .map(bookDetail -> {
                     String bookId = bookDetail.getId();
                     String bookName = bookDetail.getBookName();
-
                     Document salesDoc = salesMap.get(bookId);
                     long totalSold = 0;
-
                     if (salesDoc != null && salesDoc.containsKey("totalSold")) {
                         totalSold = ((Number) salesDoc.get("totalSold")).longValue();
                     }
-
                     return new BestSellingBookDto(bookId, bookName, (int) totalSold);
                 })
-                .filter(dto -> dto.getTotalSold() < 10) // LỌC: Sách bán dưới 10 cuốn
-                .sorted(Comparator.comparing(BestSellingBookDto::getTotalSold)) // Sắp xếp TĂNG DẦN
+                .filter(dto -> dto.getTotalSold() < 10)
+                .sorted(Comparator.comparing(BestSellingBookDto::getTotalSold))
                 .collect(Collectors.toList());
 
-        // 4. PHÂN TRANG THỦ CÔNG (IN-MEMORY PAGING)
+        // 4. Phân trang thủ công
         int totalBooks = allWorstSellingBooks.size();
         Pageable pageable = PageRequest.of(page, size);
 
@@ -706,7 +746,6 @@ public class OrderServiceImpl implements IOrderService {
         int end = Math.min((start + size), totalBooks);
 
         if (start > totalBooks) {
-            // Nếu trang bắt đầu vượt quá tổng số lượng
             return Page.empty(pageable);
         }
 
@@ -715,10 +754,9 @@ public class OrderServiceImpl implements IOrderService {
         return new PageImpl<>(pageContent, pageable, totalBooks);
     }
 
-    // --- PHƯƠNG THỨC MỚI: SÁCH SẮP HẾT HÀNG CÓ PHÂN TRANG ---
     @Override
     public Page<BestSellingBookDto> getLowStockAlertsPaginated(int threshold, int page, int size) {
-        // 1. GỌI BOOK SERVICE LẤY TẤT CẢ SÁCH VÀ TỒN KHO
+        // 1. Lấy TẤT CẢ sách từ Book Service
         String url = bookServiceBaseUrl + "/api/book/all-details";
         BookDetailDto[] allBooksArray;
         try {
@@ -734,7 +772,7 @@ public class OrderServiceImpl implements IOrderService {
             return Page.empty();
         }
 
-        // 2. LỌC VÀ CHUYỂN ĐỔI: Sách có tồn kho dưới ngưỡng (threshold)
+        // 2. Lọc (tồn kho < ngưỡng) và sắp xếp
         List<BestSellingBookDto> lowStockBooks = Arrays.stream(allBooksArray)
                 .filter(bookDetail -> bookDetail.getStockQuantity() < threshold)
                 .map(bookDetail -> {
@@ -747,11 +785,10 @@ public class OrderServiceImpl implements IOrderService {
                     dto.setStockStatus("Sắp hết hàng (" + bookDetail.getStockQuantity() + ")");
                     return dto;
                 })
-                // Sắp xếp theo số lượng tồn kho TĂNG DẦN (sách ít tồn kho nhất lên đầu)
                 .sorted(Comparator.comparing(BestSellingBookDto::getStockQuantity))
                 .collect(Collectors.toList());
 
-        // 3. PHÂN TRANG THỦ CÔNG
+        // 3. Phân trang thủ công
         int totalBooks = lowStockBooks.size();
         Pageable pageable = PageRequest.of(page, size);
 
@@ -768,17 +805,15 @@ public class OrderServiceImpl implements IOrderService {
     }
 
 
-    // --- PHƯƠNG THỨC MỚI: SÁCH BÁN CHẠY ĐỀU CÓ PHÂN TRANG ---
     @Override
     public Page<BestSellingBookDto> getConsistentSellersPaginated(int months, int minAvgMonthlySales, int page, int size) {
-        // 1. TÍNH KHOẢNG THỜI GIAN
+        // 1. Tính khoảng thời gian
         LocalDate endDate = LocalDate.now();
-        // Lấy từ đầu tháng của 'months' tháng trước
         LocalDate startDate = endDate.minusMonths(months).withDayOfMonth(1);
         Date start = Date.from(startDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
         Date end = Date.from(endDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
 
-        // 2. AGGREGATION: TÍNH TỔNG SỐ LƯỢNG BÁN TRONG KHOẢNG THỜI GIAN
+        // 2. Aggregation: Lấy tổng số lượng bán
         Criteria dateCriteria = Criteria.where("dateOrder").gte(start).lte(end);
         Criteria statusCriteria = Criteria.where("shippingStatus").nin("Chờ xử lý", "Đã hủy");
         MatchOperation matchOperation = Aggregation.match(new Criteria().andOperator(dateCriteria, statusCriteria));
@@ -800,18 +835,16 @@ public class OrderServiceImpl implements IOrderService {
                 BestSellingBookDto.class
         );
 
-        // 3. LỌC VÀ SẮP XẾP: Bán chạy đều (totalSold / months >= minAvgMonthlySales)
+        // 3. Lọc (doanh số trung bình >= ngưỡng) và sắp xếp
         List<BestSellingBookDto> consistentSellers = results.getMappedResults().stream()
                 .filter(dto -> {
-                    // Tính trung bình bán hàng theo tháng
                     double averageMonthlySales = (double) dto.getTotalSold() / months;
                     return averageMonthlySales >= minAvgMonthlySales;
                 })
-                // Sắp xếp theo số lượng bán được GIẢM DẦN
                 .sorted(Comparator.comparing(BestSellingBookDto::getTotalSold).reversed())
                 .collect(Collectors.toList());
 
-        // 4. PHÂN TRANG THỦ CÔNG
+        // 4. Phân trang thủ công
         int totalBooks = consistentSellers.size();
         Pageable pageable = PageRequest.of(page, size);
 
@@ -831,7 +864,6 @@ public class OrderServiceImpl implements IOrderService {
     public Optional<Order> assignDeliveryUnit(String orderId, String deliveryUnitId) {
         return orderRepository.findById(orderId)
                 .map(order -> {
-                    // Cập nhật DeliveryUnitId
                     order.setDeliveryUnitId(deliveryUnitId);
                     return orderRepository.save(order);
                 });
@@ -847,19 +879,13 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public Page<Order> getOrdersByDeliveryUnitId(String deliveryUnitId, int page, int size) {
-        // Yêu cầu: sắp xếp theo ngày đặt hàng giảm dần
         Pageable pageable = PageRequest.of(page, size, Sort.by("dateOrder").descending());
-
-        // Sử dụng phương thức findByDeliveryUnitId từ OrderRepository
         return orderRepository.findByDeliveryUnitId(deliveryUnitId, pageable);
     }
 
     @Override
     public Page<Order> getOrdersByShipperId(String shipperId, int page, int size) {
-        // Sắp xếp theo ngày đặt hàng giảm dần
         Pageable pageable = PageRequest.of(page, size, Sort.by("dateOrder").descending());
-
-        // Gọi repository
         return orderRepository.findByShipperId(shipperId, pageable);
     }
 
@@ -868,25 +894,25 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
 
-        // Ghép địa chỉ theo format mong muốn
-        StringBuilder addressBuilder = new StringBuilder();
+        StringJoiner addressJoiner = new StringJoiner(", ");
+
         if (order.getNote() != null && !order.getNote().isBlank()) {
-            addressBuilder.append(order.getNote()).append(", ");
+            addressJoiner.add(order.getNote().trim());
         }
         if (order.getWard() != null && !order.getWard().isBlank()) {
-            addressBuilder.append(order.getWard()).append(", ");
+            addressJoiner.add(order.getWard().trim());
         }
         if (order.getDistrict() != null && !order.getDistrict().isBlank()) {
-            addressBuilder.append(order.getDistrict()).append(", ");
+            addressJoiner.add(order.getDistrict().trim());
         }
         if (order.getCity() != null && !order.getCity().isBlank()) {
-            addressBuilder.append(order.getCity()).append(", ");
+            addressJoiner.add(order.getCity().trim());
         }
         if (order.getCountry() != null && !order.getCountry().isBlank()) {
-            addressBuilder.append(order.getCountry());
+            addressJoiner.add(order.getCountry().trim());
         }
 
-        return addressBuilder.toString().replaceAll(", $", ""); // bỏ dấu , thừa
+        return addressJoiner.toString();
     }
 
 }

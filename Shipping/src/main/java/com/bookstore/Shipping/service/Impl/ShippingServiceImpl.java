@@ -10,6 +10,7 @@ import com.bookstore.Shipping.repository.ShippingRepository;
 import com.bookstore.Shipping.repository.ShipInforRepository;
 import com.bookstore.Shipping.service.IShippingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.mongodb.core.geo.GeoJsonPoint;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder; // Import cần thiết
 import org.springframework.stereotype.Service;
@@ -79,6 +80,7 @@ public class ShippingServiceImpl implements IShippingService {
             unit.setEmail(savedAccount.getEmail());
             unit.setPhone("null");
             unit.setBranchAddress("null");
+            unit.setUnit("null");
 
             deliveryUnitRepository.save(unit);
         }
@@ -170,6 +172,11 @@ public class ShippingServiceImpl implements IShippingService {
     }
 
     @Override
+    public List<DeliveryUnit> getDeliveryUnitsByUnit(String unit) {
+        return deliveryUnitRepository.findByUnit(unit);
+    }
+
+    @Override
     public Optional<ShipInfor> updateShipInfor(String shipperId, ShipInfor updatedInfo) {
         return shipInforRepository.findByShipperId(shipperId).map(existing -> {
             existing.setName(updatedInfo.getName());
@@ -180,6 +187,16 @@ public class ShippingServiceImpl implements IShippingService {
             existing.setLongitude(updatedInfo.getLongitude());
             existing.setLastUpdated(LocalDateTime.now());
             existing.setRouteHistory(updatedInfo.getRouteHistory());
+
+            // ✅ CẬP NHẬT TRƯỜNG GEOJSONPOINT
+            Double newLon = updatedInfo.getLongitude();
+            Double newLat = updatedInfo.getLatitude();
+            if (newLon != null && newLat != null) {
+                existing.setCurrentLocation(new GeoJsonPoint(newLon, newLat));
+            } else {
+                existing.setCurrentLocation(null);
+            }
+
             return shipInforRepository.save(existing);
         });
     }

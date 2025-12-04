@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -131,12 +132,24 @@ public class OrderController {
     }
 
     @GetMapping("/top-selling-categories")
-    public ResponseEntity<List<BestSellingBookDto>> getTopSellingCategories(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date startDate, // THÊM
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date endDate) { // THÊM
-        List<BestSellingBookDto> topCategories = orderService.getTop5BestSellingCategories(startDate, endDate); // CẬP NHẬT
-        return ResponseEntity.ok(topCategories);
+    public ResponseEntity<?> getTopSellingCategories(
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        try {
+            List<BestSellingBookDto> topCategories = orderService.getTop5BestSellingCategories(
+                    startDate != null ? java.sql.Timestamp.valueOf(startDate) : null,
+                    endDate != null ? java.sql.Timestamp.valueOf(endDate) : null
+            );
+            return ResponseEntity.ok(topCategories);
+        } catch (Exception e) {
+            e.printStackTrace(); // In ra console
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
     }
+
+
 
     @GetMapping("/worst-selling")
     public ResponseEntity<Page<BestSellingBookDto>> getTopWorstSellingBooks(

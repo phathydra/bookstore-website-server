@@ -5,17 +5,21 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
-@Data
-@NoArgsConstructor
+@Data // Includes @NoArgsConstructor implicitly if no other constructor is defined
 public class RouteResponse {
     private List<Route> routes;
     private String errorMessage;
+    private List<WaypointInfo> waypoints; // <-- Correctly uses WaypointInfo
 
+    // Keep constructor for error messages
     public RouteResponse(String errorMessage) {
         this.errorMessage = errorMessage;
     }
 
-    @Data
+    // Default constructor needed if using @Data and defining another constructor
+    public RouteResponse() {}
+
+    @Data // Lombok for inner class too
     public static class Route {
         private double distance;
         private double duration;

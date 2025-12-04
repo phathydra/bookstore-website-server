@@ -11,4 +11,5 @@ public interface IBookAnalyticsService {
     BookAnalyticsDto incrementAddToCart(String bookId);
 
     BookAnalyticsDto incrementPurchase(String bookId);
+
 }

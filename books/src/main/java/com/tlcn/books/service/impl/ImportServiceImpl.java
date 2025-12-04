@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -142,14 +143,32 @@ public class ImportServiceImpl implements IImportService {
                 } else {
                     // Nếu sách chưa tồn tại, tạo mới
                     book = new Book();
-                    book.setBookId(UUID.randomUUID().toString());
+
+                    // ❌ Không set ID thủ công — để MongoDB tự sinh ObjectId
+                    // book.setBookId(UUID.randomUUID().toString());
+
                     book.setBookName(bookName);
                     book.setBookAuthor(bookAuthor);
                     book.setBookSupplier(bookSupplier);
                     book.setBookStockQuantity(quantity);
+
+                    // ⚙️ Thêm mặc định để tránh null
+                    book.setBookImages(List.of("https://res.cloudinary.com/dfsxqmwkz/image/upload/v1761570462/li3gbhoqxbxouyidcbpm.jpg"));
+                    book.setBookPrice(importPrice > 0 ? importPrice : 0.0);
+                    book.setMainCategory("Chưa phân loại");
+                    book.setBookCategory("Chưa phân loại");
+                    book.setBookYearOfProduction(0);
+                    book.setBookPublisher("Không rõ");
+                    book.setBookLanguage("Không rõ");
+                    book.setBookDescription("Chưa có mô tả");
+
+                    // ✅ Khi save mà chưa có ID, MongoDB sẽ tự sinh ObjectId hợp lệ
                     bookRepository.save(book);
+
+                    // ✅ Lấy ObjectId vừa được sinh ra (dưới dạng string)
                     bookId = book.getBookId();
                 }
+
 
                 // Tạo bản ghi nhập kho
                 Import newImport = new Import();
