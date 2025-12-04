@@ -137,6 +137,30 @@ public class VoucherController {
         return ResponseEntity.ok(updatedVoucher);
     }
 
+    @GetMapping("/obtainable/expired")
+    public ResponseEntity<Page<ObtainableVoucherDto>> getExpiredObtainableVoucher(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getExpiredObtainableVoucher(page, size);
+        return ResponseEntity.ok(obtainableVoucherDtos);
+    }
+
+    @GetMapping("/obtainable/active")
+    public ResponseEntity<Page<ObtainableVoucherDto>> getActiveObtainableVoucher(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getActiveObtainableVoucher(page, size);
+        return ResponseEntity.ok(obtainableVoucherDtos);
+    }
+
+    @GetMapping("/obtainable/upcoming")
+    public ResponseEntity<Page<ObtainableVoucherDto>> getUpcomingObtainableVoucher(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getUpcomingObtainableVoucher(page, size);
+        return ResponseEntity.ok(obtainableVoucherDtos);
+    }
+
     @DeleteMapping("{id}")
     public ResponseEntity<ResponseDto> deleteVoucher(@PathVariable String id){
         iVoucherService.delete(id);
@@ -151,5 +175,66 @@ public class VoucherController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(new ResponseDto("200", "Delete successfully"));
+    }
+
+    @GetMapping("/rank")
+    public ResponseEntity<Page<RankVoucherDto>> getAllRankVoucher(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "") String code) {
+        Page<RankVoucherDto> rankVoucherDtos = iVoucherService.getAllRankVoucher(page, size, code);
+        return ResponseEntity.ok(rankVoucherDtos);
+    }
+
+    @GetMapping("/rank/expired")
+    public ResponseEntity<Page<RankVoucherDto>> getExpiredRankVoucher(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<RankVoucherDto> rankVoucherDtos = iVoucherService.getExpiredRankVoucher(page, size);
+        return ResponseEntity.ok(rankVoucherDtos);
+    }
+
+    @GetMapping("/rank/active")
+    public ResponseEntity<Page<RankVoucherDto>> getActiveRankVoucher(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<RankVoucherDto> rankVoucherDtos = iVoucherService.getActiveRankVoucher(page, size);
+        return ResponseEntity.ok(rankVoucherDtos);
+    }
+
+    @GetMapping("/rank/upcoming")
+    public ResponseEntity<Page<RankVoucherDto>> getUpcomingRankVoucher(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<RankVoucherDto> rankVoucherDtos = iVoucherService.getUpcomingRankVoucher(page, size);
+        return ResponseEntity.ok(rankVoucherDtos);
+    }
+
+    @GetMapping("/rank/code")
+    public ResponseEntity<RankVoucherDto> getRankVoucherByCode(@RequestParam String code) {
+        RankVoucherDto rankVoucherDto = iVoucherService.getRankVoucherByCode(code);
+        return ResponseEntity.ok(rankVoucherDto);
+    }
+
+    @PostMapping("/rank")
+    public ResponseEntity<RankVoucherDto> createRankVoucher(@RequestBody RankVoucherDto rankVoucherDto) {
+        RankVoucherDto created = iVoucherService.createRankVoucher(rankVoucherDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/rank/{id}")
+    public ResponseEntity<RankVoucherDto> updateRankVoucher(
+            @PathVariable String id,
+            @RequestBody RankVoucherDto rankVoucherDto) {
+        RankVoucherDto updated = iVoucherService.updateRankVoucher(id, rankVoucherDto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/rank/{id}")
+    public ResponseEntity<ResponseDto> deleteRankVoucher(@PathVariable String id) {
+        iVoucherService.deleteRankVoucher(id);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(new ResponseDto("200", "RankVoucher deleted successfully"));
     }
 }

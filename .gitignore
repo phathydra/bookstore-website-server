@@ -7,3 +7,7 @@ orders/src/main/resources/application.yml
 chatbot/src/main/resources/application.yml
 
 shipping/src/main/resources/application.yml
+
+recommend/venv/
+recommend/*.pyc
+recommend/__pycache__/

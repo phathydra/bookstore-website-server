@@ -1,5 +1,8 @@
 package com.tlcn.books.service.impl;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tlcn.books.dto.*;
 import com.tlcn.books.entity.Book;
 import com.tlcn.books.entity.BookDiscount;
@@ -16,11 +19,18 @@ import com.tlcn.books.service.IBookService;
 import lombok.AllArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
@@ -209,7 +219,80 @@ public class BookServiceImpl implements IBookService {
     }
 
     @Override
-    public List<BookDto> getRecommendedBooks(String bookId) {
+    public List<BookDto> getRecommendedBooks(String bookId, String accountId, int k) {
+        if (accountId != null && !accountId.isBlank()) {
+            List<BookDto> personalized = getPersonalizedRecommendations(bookId, accountId, k);
+            if (personalized != null && personalized.size() >= Math.min(k, 3)) {
+                return personalized.stream().limit(k).collect(Collectors.toList());
+            }
+        }
+
+        return getRuleBasedRecommendations(bookId);
+    }
+
+    private List<BookDto> getPersonalizedRecommendations(String bookId, String accountId, int k) {
+        String url = "http://localhost:8086/recommend/" + accountId + "?k=" + (k + 10);
+
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setRequestFactory(new SimpleClientHttpRequestFactory() {{
+            setConnectTimeout(5000);
+            setReadTimeout(10000);
+        }});
+
+        try {
+            ParameterizedTypeReference<Map<String, Object>> typeRef = new ParameterizedTypeReference<>() {};
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.GET, null, typeRef);
+
+            System.out.println("Status: " + response.getStatusCode());
+
+            Map<String, Object> body = response.getBody();
+            if (body == null) return null;
+
+            System.out.println("Raw body: " + body);
+
+            List<String> recommendedIds = new ArrayList<>();
+            Object recObj = body.get("recommendations");
+
+            if (recObj instanceof List<?>) {
+                for (Object item : (List<?>) recObj) {
+                    if (item != null) {
+                        recommendedIds.add(item.toString());
+                    }
+                }
+            }
+
+            if (recommendedIds.isEmpty()) {
+                System.out.println("Không parse được recommendations");
+                return null;
+            }
+
+            System.out.println("Đã lấy được " + recommendedIds.size() + " gợi ý từ model");
+
+            Pageable pageable = PageRequest.of(0, k + 10);
+            Page<Book> page = bookRepository.findByBookIdIn(recommendedIds, pageable);
+
+            Map<String, Book> bookMap = page.getContent().stream()
+                    .collect(Collectors.toMap(Book::getBookId, b -> b, (b1, b2) -> b1));
+
+            List<BookDto> result = new ArrayList<>();
+            for (String id : recommendedIds) {
+                Book book = bookMap.get(id);
+                if (book != null && (bookId == null || !book.getBookId().equals(bookId))) {
+                    result.add(BookMapper.mapToBookDto(book, new BookDto()));
+                }
+                if (result.size() >= k) break;
+            }
+
+            System.out.println("Trả về " + result.size() + " sách cá nhân hóa thành công!");
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("Lỗi gọi recommend API:");
+            e.printStackTrace();
+            return null;
+        }
+    }
+    private List<BookDto> getRuleBasedRecommendations(String bookId) {
         Optional<Book> optionalBook = bookRepository.findById(bookId);
 
         List<Book> recommendedBooks = new ArrayList<>();

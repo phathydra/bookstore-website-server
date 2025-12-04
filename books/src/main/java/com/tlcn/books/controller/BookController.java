@@ -171,9 +171,9 @@ public class BookController {
     }
 
     @GetMapping("/{bookId}/recommendations")
-    public ResponseEntity<List<BookDto>> getRecommendedBooks(@PathVariable String bookId) {
+    public ResponseEntity<List<BookDto>> getRecommendedBooks(@PathVariable String bookId, @RequestParam String accountId, @RequestParam int k) {
         try {
-            List<BookDto> recommendedBooks = iBookService.getRecommendedBooks(bookId);
+            List<BookDto> recommendedBooks = iBookService.getRecommendedBooks(bookId, accountId, k);
             return ResponseEntity.ok(recommendedBooks);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());

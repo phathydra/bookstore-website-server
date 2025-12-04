@@ -2,6 +2,7 @@ package com.bookstore.orders.service.impl;
 
 import com.bookstore.orders.dto.ObtainableVoucherDto;
 import com.bookstore.orders.dto.OrderVoucherDto;
+import com.bookstore.orders.dto.RankVoucherDto;
 import com.bookstore.orders.dto.VoucherDto;
 import com.bookstore.orders.entity.*;
 import com.bookstore.orders.mapper.VoucherMapper;
@@ -36,6 +37,9 @@ public class VoucherServiceImpl implements IVoucherService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private RankVoucherRepository rankVoucherRepository;
 
     @Override
     public Page<VoucherDto> getAllVoucher(int page, int size, String code) {
@@ -256,6 +260,30 @@ public class VoucherServiceImpl implements IVoucherService {
     }
 
     @Override
+    public Page<ObtainableVoucherDto> getExpiredObtainableVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<ObtainableVoucher> rankVouchers = obtainableVoucherRepository.findByEndDateBefore(now, pageable);
+        return rankVouchers.map(v -> VoucherMapper.toObtainableVoucherDto(v, new ObtainableVoucherDto()));
+    }
+
+    @Override
+    public Page<ObtainableVoucherDto> getActiveObtainableVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<ObtainableVoucher> rankVouchers = obtainableVoucherRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(now, now, pageable);
+        return rankVouchers.map(v -> VoucherMapper.toObtainableVoucherDto(v, new ObtainableVoucherDto()));
+    }
+
+    @Override
+    public Page<ObtainableVoucherDto> getUpcomingObtainableVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<ObtainableVoucher> rankVouchers = obtainableVoucherRepository.findByStartDateAfter(now, pageable);
+        return rankVouchers.map(v -> VoucherMapper.toObtainableVoucherDto(v, new ObtainableVoucherDto()));
+    }
+
+    @Override
     public void claimVoucher(String accountId, ObtainableVoucherDto obtainableVoucherDto){
         Optional<ObtainedVoucher> oldVouchers = obtainedVoucherRepository.findByCode(obtainableVoucherDto.getCode());
         if(oldVouchers.isPresent()){
@@ -279,5 +307,67 @@ public class VoucherServiceImpl implements IVoucherService {
     @Override
     public void deleteObtainableVoucher(String id) {
         obtainableVoucherRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<RankVoucherDto> getAllRankVoucher(int page, int size, String code) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<RankVoucher> rankVouchers = rankVoucherRepository.findAllByCodeContainingIgnoreCaseOrderByEndDateDesc(pageable, code);
+        return rankVouchers.map(v -> VoucherMapper.toRankVoucherDto(v, new RankVoucherDto()));
+    }
+
+    @Override
+    public Page<RankVoucherDto> getExpiredRankVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<RankVoucher> rankVouchers = rankVoucherRepository.findByEndDateBefore(now, pageable);
+        return rankVouchers.map(v -> VoucherMapper.toRankVoucherDto(v, new RankVoucherDto()));
+    }
+
+    @Override
+    public Page<RankVoucherDto> getActiveRankVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<RankVoucher> rankVouchers = rankVoucherRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(now, now, pageable);
+        return rankVouchers.map(v -> VoucherMapper.toRankVoucherDto(v, new RankVoucherDto()));
+    }
+
+    @Override
+    public Page<RankVoucherDto> getUpcomingRankVoucher(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Date now = new Date();
+        Page<RankVoucher> rankVouchers = rankVoucherRepository.findByStartDateAfter(now, pageable);
+        return rankVouchers.map(v -> VoucherMapper.toRankVoucherDto(v, new RankVoucherDto()));
+    }
+
+    @Override
+    public RankVoucherDto getRankVoucherByCode(String code) {
+        Optional<RankVoucher> voucher = rankVoucherRepository.getRankVoucherByCode(code);
+        return voucher.map(v -> VoucherMapper.toRankVoucherDto(v, new RankVoucherDto()))
+                .orElseThrow(() -> new RuntimeException("RankVoucher not found with code: " + code));
+    }
+
+    @Override
+    public RankVoucherDto createRankVoucher(RankVoucherDto rankVoucherDto) {
+        RankVoucher entity = VoucherMapper.toRankVoucher(rankVoucherDto, new RankVoucher());
+        RankVoucher saved = rankVoucherRepository.save(entity);
+        return VoucherMapper.toRankVoucherDto(saved, new RankVoucherDto());
+    }
+
+    @Override
+    public RankVoucherDto updateRankVoucher(String id, RankVoucherDto rankVoucherDto) {
+        Optional<RankVoucher> optional = rankVoucherRepository.findById(id);
+        if (optional.isPresent()) {
+            RankVoucher updated = VoucherMapper.toRankVoucher(rankVoucherDto, optional.get());
+            RankVoucher saved = rankVoucherRepository.save(updated);
+            return VoucherMapper.toRankVoucherDto(saved, new RankVoucherDto());
+        } else {
+            throw new RuntimeException("RankVoucher not found with id: " + id);
+        }
+    }
+
+    @Override
+    public void deleteRankVoucher(String id) {
+        rankVoucherRepository.deleteById(id);
     }
 }

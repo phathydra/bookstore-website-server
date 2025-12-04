@@ -28,7 +28,7 @@ public interface IBookService {
 
     Page<BookWithDiscountDto> searchBooks(int page, int size, String input);
 
-    List<BookDto> getRecommendedBooks(String bookId);
+    List<BookDto> getRecommendedBooks(String bookId, String accountId, int k);
 
     List<BookDto> getSearchRecommendedBooks(String bookName, List<String> excludedBooks);
 

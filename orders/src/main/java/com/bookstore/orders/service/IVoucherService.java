@@ -2,6 +2,7 @@ package com.bookstore.orders.service;
 
 import com.bookstore.orders.dto.ObtainableVoucherDto;
 import com.bookstore.orders.dto.OrderVoucherDto;
+import com.bookstore.orders.dto.RankVoucherDto;
 import com.bookstore.orders.dto.VoucherDto;
 import com.bookstore.orders.entity.ObtainableVoucher;
 import com.bookstore.orders.entity.Voucher;
@@ -40,9 +41,31 @@ public interface IVoucherService {
 
     ObtainableVoucherDto updateObtainableVoucher(String id, ObtainableVoucherDto obtainableVoucherDto);
 
+    Page<ObtainableVoucherDto> getExpiredObtainableVoucher(int page, int size);
+
+    Page<ObtainableVoucherDto> getActiveObtainableVoucher(int page, int size);
+
+    Page<ObtainableVoucherDto> getUpcomingObtainableVoucher(int page, int size);
+
     void claimVoucher(String userId, ObtainableVoucherDto obtainableVoucherDto);
 
     void delete(String voucherId);
 
     void deleteObtainableVoucher(String id);
+
+    Page<RankVoucherDto> getAllRankVoucher(int page, int size, String code);
+
+    Page<RankVoucherDto> getExpiredRankVoucher(int page, int size);
+
+    Page<RankVoucherDto> getActiveRankVoucher(int page, int size);
+
+    Page<RankVoucherDto> getUpcomingRankVoucher(int page, int size);
+
+    RankVoucherDto getRankVoucherByCode(String code);
+
+    RankVoucherDto createRankVoucher(RankVoucherDto rankVoucherDto);
+
+    RankVoucherDto updateRankVoucher(String id, RankVoucherDto rankVoucherDto);
+
+    void deleteRankVoucher(String id);
 }
