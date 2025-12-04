@@ -2,10 +2,11 @@ package com.bookstore.orders.mapper;
 
 import com.bookstore.orders.dto.ObtainableVoucherDto;
 import com.bookstore.orders.dto.OrderVoucherDto;
+import com.bookstore.orders.dto.RankVoucherDto;
 import com.bookstore.orders.dto.VoucherDto;
 import com.bookstore.orders.entity.ObtainableVoucher;
-import com.bookstore.orders.entity.ObtainedVoucher;
 import com.bookstore.orders.entity.OrderVoucher;
+import com.bookstore.orders.entity.RankVoucher;
 import com.bookstore.orders.entity.Voucher;
 import org.springframework.stereotype.Component;
 
@@ -85,5 +86,34 @@ public class VoucherMapper {
         orderVoucherDto.setVoucherCode(orderVoucher.getVoucherCode());
         orderVoucherDto.setDiscountedPrice(orderVoucher.getDiscountedPrice());
         return orderVoucherDto;
+    }
+
+    static public RankVoucher toRankVoucher(RankVoucherDto rankVoucherDto, RankVoucher rankVoucher){
+        rankVoucher.setCode(rankVoucherDto.getCode());
+        rankVoucher.setVoucherType(rankVoucherDto.getVoucherType());
+        rankVoucher.setPercentageDiscount(rankVoucherDto.getPercentageDiscount());
+        rankVoucher.setValueDiscount(rankVoucherDto.getValueDiscount());
+        rankVoucher.setHighestDiscountValue(rankVoucherDto.getHighestDiscountValue());
+        rankVoucher.setMinOrderValue(rankVoucherDto.getMinOrderValue());
+        rankVoucher.setUsageLimit(rankVoucherDto.getUsageLimit());
+        rankVoucher.setStartDate(rankVoucherDto.getStartDate());
+        rankVoucher.setEndDate(rankVoucherDto.getEndDate());
+        rankVoucher.setRank(rankVoucherDto.getRank());
+        return rankVoucher;
+    }
+
+    static public RankVoucherDto toRankVoucherDto(RankVoucher rankVoucher, RankVoucherDto rankVoucherDto){
+        rankVoucherDto.setId(rankVoucher.getId());
+        rankVoucherDto.setCode(rankVoucher.getCode());
+        rankVoucherDto.setVoucherType(rankVoucher.getVoucherType());
+        rankVoucherDto.setPercentageDiscount(rankVoucher.getPercentageDiscount());
+        rankVoucherDto.setValueDiscount(rankVoucher.getValueDiscount());
+        rankVoucherDto.setHighestDiscountValue(rankVoucher.getHighestDiscountValue());
+        rankVoucherDto.setMinOrderValue(rankVoucher.getMinOrderValue());
+        rankVoucherDto.setUsageLimit(rankVoucher.getUsageLimit());
+        rankVoucherDto.setStartDate(rankVoucher.getStartDate());
+        rankVoucherDto.setEndDate(rankVoucher.getEndDate());
+        rankVoucherDto.setRank(rankVoucher.getRank());
+        return rankVoucherDto;
     }
 }

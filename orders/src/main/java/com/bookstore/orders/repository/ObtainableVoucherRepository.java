@@ -2,6 +2,7 @@ package com.bookstore.orders.repository;
 
 import com.bookstore.orders.entity.ObtainableVoucher;
 import com.bookstore.orders.entity.ObtainedVoucher;
+import com.bookstore.orders.entity.RankVoucher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
@@ -20,4 +21,11 @@ public interface ObtainableVoucherRepository extends MongoRepository<ObtainableV
     Page<ObtainableVoucher> findAllByOrderByEndDateDesc(Pageable pageable);
 
     List<ObtainableVoucher> getObtainableVoucherByPublicClaimable(boolean publicClaimable);
+
+    Page<ObtainableVoucher> findByEndDateBefore(Date date, Pageable pageable);
+
+    Page<ObtainableVoucher> findByStartDateLessThanEqualAndEndDateGreaterThanEqual(
+            Date startDate, Date endDate, Pageable pageable);
+
+    Page<ObtainableVoucher> findByStartDateAfter(Date date, Pageable pageable);
 }

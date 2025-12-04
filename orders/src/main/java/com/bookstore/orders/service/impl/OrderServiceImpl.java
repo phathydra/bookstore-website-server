@@ -3,10 +3,14 @@ package com.bookstore.orders.service.impl;
 import com.bookstore.orders.dto.OrderDto;
 import com.bookstore.orders.dto.OrderStatusDto;
 import com.bookstore.orders.dto.RevenueByMonthDto;
+import com.bookstore.orders.entity.MonthlyPoints;
 import com.bookstore.orders.entity.Order;
 import com.bookstore.orders.entity.OrderItem;
+import com.bookstore.orders.entity.Rank;
 import com.bookstore.orders.mapper.OrderMapper;
+import com.bookstore.orders.repository.MonthlyPointsRepository;
 import com.bookstore.orders.repository.OrderRepository;
+import com.bookstore.orders.repository.RankRepository;
 import com.bookstore.orders.service.ICartService;
 import com.bookstore.orders.service.IOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +46,12 @@ public class OrderServiceImpl implements IOrderService {
 
     @Autowired
     private OrderRepository orderRepository;
+
+    @Autowired
+    private RankRepository rankRepository;
+
+    @Autowired
+    private MonthlyPointsRepository monthlyPointsRepository;
 
     @Autowired
     private ICartService iCartService;
@@ -167,6 +177,7 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
+    @Transactional
     public Optional<Order> updateShippingStatus(String orderId, String shippingStatus) {
         Optional<Order> orderOptional = orderRepository.findById(orderId);
 
@@ -174,10 +185,44 @@ public class OrderServiceImpl implements IOrderService {
             Order order = orderOptional.get();
             order.setShippingStatus(shippingStatus);
             orderRepository.save(order);
+            if(shippingStatus.equals("Đã nhận hàng")){
+                updatePoints(order);
+            }
             return Optional.of(order);
         }
 
         return Optional.empty();
+    }
+
+    private void updatePoints(Order order){
+        Optional<Rank> optionalRank = rankRepository.findByAccountId(order.getAccountId());
+        Double points = Math.round((order.getTotalPrice() / 1000.0) * 100.0) / 100.0;
+        if(optionalRank.isPresent()){
+            Double currentPoints = optionalRank.get().getPoints() + points;
+            optionalRank.get().setPoints(currentPoints);
+            rankRepository.save(optionalRank.get());
+            updateMonthlyPoints( optionalRank.get().getAccountId(), points);
+        }
+    }
+
+    private void updateMonthlyPoints(String accountId, Double points){
+        LocalDate currDate = LocalDate.now();
+        int month = currDate.getMonthValue();
+        int year = currDate.getYear();
+        Optional<MonthlyPoints> currMonthlyPoints = monthlyPointsRepository.findByAccountIdAndMonthAndYear(accountId, month, year);
+        if(currMonthlyPoints.isPresent()){
+            Double currPoints = currMonthlyPoints.get().getPoint() + points;
+            currMonthlyPoints.get().setPoint(currPoints);
+            monthlyPointsRepository.save(currMonthlyPoints.get());
+        }
+        else{
+            MonthlyPoints monthlyPoints = new MonthlyPoints();
+            monthlyPoints.setAccountId(accountId);
+            monthlyPoints.setYear(year);
+            monthlyPoints.setMonth(month);
+            monthlyPoints.setPoint(points);
+            monthlyPointsRepository.save(monthlyPoints);
+        }
     }
 
     @Override

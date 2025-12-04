@@ -13,5 +13,7 @@ public interface ObtainedVoucherRepository extends MongoRepository<ObtainedVouch
     Optional<ObtainedVoucher> findByCode(String code);
     List<ObtainedVoucher> getObtainedVoucherByAccountId(String accountId);
 
+    Optional<ObtainedVoucher> findByAccountIdAndCode(String accountId, String code);
+
     void deleteByAccountIdAndCode(String accountId, String code);
 }
