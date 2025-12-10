@@ -11,3 +11,6 @@ shipping/src/main/resources/application.yml
 recommend/venv/
 recommend/*.pyc
 recommend/__pycache__/
+
+RAG/*.pyc
+RAG/__pycache__/

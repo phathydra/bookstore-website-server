@@ -10,7 +10,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableAsync       // <-- Cho @Async hoạt động
 @EnableScheduling
 @EnableMongoAuditing(auditorAwareRef = "auditAwareImpl")
-@EnableScheduling
 public class BooksApplication {
 
 	public static void main(String[] args) {
