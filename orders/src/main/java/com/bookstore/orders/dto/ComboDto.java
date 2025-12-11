@@ -13,7 +13,7 @@ public class ComboDto {
 
     @NotEmpty(message = "Tên combo không được để trống")
     private String name;
-
+    private String image;
     private String description;
 
     @NotEmpty(message = "Combo phải có ít nhất 1 sách")

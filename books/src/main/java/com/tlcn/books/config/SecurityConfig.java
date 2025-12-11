@@ -28,48 +28,50 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Sử dụng bean CORS bên dưới
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .authorizeHttpRequests(authorize -> authorize
-                        // Luôn cho phép các request OPTIONS (cho CORS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Các đường dẫn public
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // === CÁC API PUBLIC (KHÔNG CẦN ĐĂNG NHẬP) ===
-                        // 1. Ai cũng được GET sách, review, analytics, summary
+                        // === BOOK (SỐ ÍT & SỐ NHIỀU) ===
                         .requestMatchers(HttpMethod.GET, "/api/book/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/books/**").permitAll()
+
+                        // === ANALYTICS & SUMMARY ===
                         .requestMatchers(HttpMethod.GET, "/api/reviews/book/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/summary").permitAll()
-
-                        // 2. Cho phép TẤT CẢ request POST (để track analytics)
                         .requestMatchers(HttpMethod.POST, "/api/analytics/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/book/filter").permitAll() // Cho phép lọc
+                        .requestMatchers(HttpMethod.POST, "/api/book/filter").permitAll()
 
-                        // 3. (Test) Cho phép admin tạm thời
+                        // === BANNER ===
+                        .requestMatchers(HttpMethod.GET, "/api/banners/active").permitAll()
+                        .requestMatchers("/api/banners/**").permitAll()
+
+                        // === BOOK MANAGEMENT (TEST) ===
                         .requestMatchers(HttpMethod.POST, "/api/book/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/book/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/book/**").permitAll()
 
-                        // 4. Bất kỳ request nào khác vẫn BẮT BUỘC đăng nhập
+                        // === DISCOUNT (ĐÃ SỬA) ===
+                        // Bỏ 'HttpMethod.GET' để cho phép cả PUT, POST, DELETE truy cập
+                        .requestMatchers("/api/discounts/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // Filter JWT vẫn được bật để lấy accountId (nếu có)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // Bean CORS giữ nguyên
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Thêm các domain frontend của bạn vào đây
         configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001", "http://localhost:3002"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));

@@ -11,10 +11,13 @@ import com.tlcn.books.entity.InteractionType;
 import com.tlcn.books.service.IBookAnalyticsService; // Service để CẬP NHẬT
 import com.tlcn.books.service.IInteractionService; // Service để LOG
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.Collections;
+import java.util.List;
 
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 @RestController
@@ -175,4 +178,22 @@ public class BookAnalyticsController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/recent-views")
+    public ResponseEntity<List<String>> getRecentViews(
+            Principal principal,
+            @RequestParam(defaultValue = "5") int limit
+    ) {
+        // Luôn kiểm tra principal để đảm bảo an toàn
+        if (principal == null || principal.getName() == null) {
+            // Trả về 401 Unauthorized nếu không có user
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.emptyList());
+        }
+
+        String accountId = principal.getName();
+
+        // Gọi service (bạn sẽ cần tạo phương thức này ở Bước 2)
+        List<String> bookIds = interactionService.getRecentViewedBookIds(accountId, limit);
+
+        return ResponseEntity.ok(bookIds);
+    }
 }

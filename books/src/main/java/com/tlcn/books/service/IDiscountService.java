@@ -40,4 +40,7 @@ public interface IDiscountService {
 
     List<BookDiscountDto> getAllBookDiscounts();
 
+    Page<DiscountDto> getActiveFlashSales(int page, int size);
+
+    Page<BookDto> getBooksInActiveFlashSales(int page, int size);
 }

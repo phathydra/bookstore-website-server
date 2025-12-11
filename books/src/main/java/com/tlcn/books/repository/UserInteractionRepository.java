@@ -3,6 +3,7 @@ package com.tlcn.books.repository;
 import com.tlcn.books.dto.AnalyticsResult;
 import com.tlcn.books.entity.InteractionType;
 import com.tlcn.books.entity.UserInteraction;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
@@ -29,4 +30,6 @@ public interface UserInteractionRepository extends MongoRepository<UserInteracti
      * Xóa các sự kiện đã được xử lý (để tránh đếm lại)
      */
     void deleteByEventTypeAndTimestampBefore(InteractionType eventType, LocalDateTime timestamp);
+    List<UserInteraction> findByAccountIdAndEventTypeOrderByTimestampDesc(
+            String accountId, InteractionType eventType, Pageable pageable);
 }
