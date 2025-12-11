@@ -5,8 +5,15 @@ import com.tlcn.books.entity.UserInteraction;
 import com.tlcn.books.repository.UserInteractionRepository;
 import com.tlcn.books.service.IInteractionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -60,5 +67,39 @@ public class InteractionServiceImpl implements IInteractionService {
                 1 // Số int này chỉ để phân biệt constructor
         );
         interactionRepository.save(interaction);
+    }
+
+    @Override
+    public List<String> getRecentViewedBookIds(String accountId, int limit) {
+        // 1. Tạo một đối tượng Pageable để lấy 50 sự kiện VIEW gần nhất
+        // (Chúng ta lấy nhiều hơn 'limit' vì có thể user xem 1 cuốn sách nhiều lần)
+        Pageable pageable = PageRequest.of(0, 50);
+
+        // 2. Gọi Repository để truy vấn CSDL
+        List<UserInteraction> recentInteractions =
+                interactionRepository.findByAccountIdAndEventTypeOrderByTimestampDesc(
+                        accountId,
+                        InteractionType.VIEW,
+                        pageable
+                );
+
+        // 3. Dùng LinkedHashSet để giữ thứ tự và loại bỏ trùng lặp
+        // (LinkedHashSet sẽ giữ bookId của lần xem MỚI NHẤT)
+        Set<String> distinctBookIds = new LinkedHashSet<>();
+
+        for (UserInteraction interaction : recentInteractions) {
+            // Đảm bảo bookId không rỗng
+            if (interaction.getBookId() != null && !interaction.getBookId().isEmpty()) {
+                distinctBookIds.add(interaction.getBookId());
+            }
+
+            // 4. Dừng lại khi đã đủ số lượng 'limit'
+            if (distinctBookIds.size() >= limit) {
+                break;
+            }
+        }
+
+        // 5. Trả về một List<String>
+        return new ArrayList<>(distinctBookIds);
     }
 }

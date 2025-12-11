@@ -54,7 +54,7 @@ public class AccountServiceImpl implements IAccountService {
 
         // Gán giá trị mặc định cho quyền và trạng thái
         account.setRole("User");
-        account.setStatus("Inactive");
+        account.setStatus("Active");
 
         // Lưu tài khoản và thông tin liên quan
         Account savedAccount = accountRepository.save(account);

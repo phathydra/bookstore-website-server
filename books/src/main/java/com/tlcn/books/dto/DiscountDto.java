@@ -11,4 +11,6 @@ public class DiscountDto {
 
     Date startDate;
     Date endDate;
+
+    String type;
 }

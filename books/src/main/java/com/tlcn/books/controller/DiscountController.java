@@ -171,5 +171,29 @@ public class DiscountController {
                     .body(Collections.emptyList());
         }
     }
+    @GetMapping("flash-sales")
+    public ResponseEntity<Page<DiscountDto>> getActiveFlashSales(@RequestParam(defaultValue = "0") int page,
+                                                                 @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<DiscountDto> discountDtos = iDiscountService.getActiveFlashSales(page, size);
+            return ResponseEntity.ok(discountDtos);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
 
+    @GetMapping("flash-sales/books")
+    public ResponseEntity<Page<BookDto>> getBooksInActiveFlashSales(@RequestParam(defaultValue = "0") int page,
+                                                                    @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<BookDto> bookDtos = iDiscountService.getBooksInActiveFlashSales(page, size);
+            return ResponseEntity.ok(bookDtos);
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Page.empty());
+        }
+    }
 }

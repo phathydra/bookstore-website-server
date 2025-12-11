@@ -17,6 +17,7 @@ public class Combo {
 
     @NotEmpty
     private String name; // Tên combo, vd: "Combo Dọn Kho Mùa Hè"
+    private String image;
     private String description;
 
     @NotEmpty

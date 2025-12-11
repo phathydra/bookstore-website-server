@@ -27,6 +27,11 @@ public class ComboServiceImpl implements IComboService {
     public void createCombo(ComboDto comboDto) {
         Combo combo = new Combo();
         combo.setName(comboDto.getName());
+
+        // --- THÊM DÒNG NÀY ---
+        combo.setImage(comboDto.getImage());
+        // ---------------------
+
         combo.setDescription(comboDto.getDescription());
         combo.setBookIds(comboDto.getBookIds());
         combo.setDiscountType(comboDto.getDiscountType());
@@ -49,7 +54,7 @@ public class ComboServiceImpl implements IComboService {
         if (combo.getStartDate() != null && combo.getEndDate() != null) {
             combo.setActive(!now.isBefore(combo.getStartDate()) && !now.isAfter(combo.getEndDate()));
         } else {
-            combo.setActive(false); // Nếu không set ngày, mặc định là false
+            combo.setActive(false);
         }
 
         comboRepository.save(combo);
@@ -57,7 +62,6 @@ public class ComboServiceImpl implements IComboService {
 
     @Override
     public Page<Combo> getAllCombos(Pageable pageable) {
-        // (Đây là phiên bản đã tối ưu, không check update ở đây nữa)
         return comboRepository.findAll(pageable);
     }
 
@@ -79,28 +83,33 @@ public class ComboServiceImpl implements IComboService {
     @Override
     public Combo updateCombo(String comboId, ComboDto comboDto) {
         // 1. Lấy combo hiện có
-        Combo existingCombo = getComboById(comboId); // Tái sử dụng hàm getById để kiểm tra tồn tại
+        Combo existingCombo = getComboById(comboId);
 
         // 2. Cập nhật các trường
         existingCombo.setName(comboDto.getName());
+
+        // --- THÊM DÒNG NÀY ---
+        existingCombo.setImage(comboDto.getImage());
+        // ---------------------
+
         existingCombo.setDescription(comboDto.getDescription());
         existingCombo.setBookIds(comboDto.getBookIds());
         existingCombo.setDiscountType(comboDto.getDiscountType());
         existingCombo.setDiscountValue(comboDto.getDiscountValue());
 
-        // 3. Cập nhật ngày (cho phép xóa ngày bằng cách gửi rỗng/null)
+        // 3. Cập nhật ngày
         if (comboDto.getStartDate() != null && !comboDto.getStartDate().isEmpty()) {
             LocalDate startDate = LocalDate.parse(comboDto.getStartDate());
             existingCombo.setStartDate(startDate.atStartOfDay());
         } else {
-            existingCombo.setStartDate(null); // Cho phép xóa ngày
+            existingCombo.setStartDate(null);
         }
 
         if (comboDto.getEndDate() != null && !comboDto.getEndDate().isEmpty()) {
             LocalDate endDate = LocalDate.parse(comboDto.getEndDate());
             existingCombo.setEndDate(endDate.atTime(23, 59, 59));
         } else {
-            existingCombo.setEndDate(null); // Cho phép xóa ngày
+            existingCombo.setEndDate(null);
         }
 
         // 4. Tính toán lại trạng thái Active
@@ -108,7 +117,7 @@ public class ComboServiceImpl implements IComboService {
         if (existingCombo.getStartDate() != null && existingCombo.getEndDate() != null) {
             existingCombo.setActive(!now.isBefore(existingCombo.getStartDate()) && !now.isAfter(existingCombo.getEndDate()));
         } else {
-            existingCombo.setActive(false); // Nếu không có ngày, combo không active
+            existingCombo.setActive(false);
         }
 
         // 5. Lưu và trả về
@@ -119,19 +128,14 @@ public class ComboServiceImpl implements IComboService {
     @Override
     public List<Combo> findActiveCombosContainingBook(String bookId) {
         LocalDateTime now = LocalDateTime.now();
-
-        // Tìm các combo đang active, trong khoảng thời gian, VÀ chứa bookId
-        List<Combo> datedCombos = comboRepository
+        return comboRepository
                 .findByIsActiveTrueAndStartDateBeforeAndEndDateAfterAndBookIdsContaining(
                         now, now, bookId
                 );
-        return datedCombos;
     }
 
     @Override
     public List<Combo> findActiveCombos() {
-        // Tác vụ @Scheduled sẽ lo việc cập nhật isActive
-        // nên ở đây ta chỉ cần lấy ra là xong.
         return comboRepository.findByIsActiveTrue();
     }
 }

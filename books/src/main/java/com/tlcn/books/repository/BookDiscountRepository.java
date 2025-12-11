@@ -20,4 +20,9 @@ public interface BookDiscountRepository extends MongoRepository<BookDiscount, St
     void deleteAllByDiscountId(String discountId);
 
     List<BookDiscount> findAll();
+    void deleteByDiscountIdIn(List<String> discountIds);
+
+    // Trong interface BookDiscountRepository
+    List<BookDiscount> findByDiscountIdIn(List<String> discountIds);
+    void deleteAllByDiscountIdIn(List<String> discountIds);
 }
