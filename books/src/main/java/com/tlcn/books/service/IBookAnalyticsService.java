@@ -10,6 +10,7 @@ public interface IBookAnalyticsService {
 
     BookAnalyticsDto incrementAddToCart(String bookId);
 
-    BookAnalyticsDto incrementPurchase(String bookId);
+    // SỬA: Thêm tham số 'quantity' để cộng đúng số lượng
+    BookAnalyticsDto incrementPurchase(String bookId, int quantity);
 
 }
