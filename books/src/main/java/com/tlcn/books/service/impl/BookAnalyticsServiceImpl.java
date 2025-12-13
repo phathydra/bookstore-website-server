@@ -39,10 +39,13 @@ public class BookAnalyticsServiceImpl implements IBookAnalyticsService {
     }
 
     @Override
-    public BookAnalyticsDto incrementPurchase(String bookId) {
+    public BookAnalyticsDto incrementPurchase(String bookId, int quantity) {
         BookAnalytics analytics = bookAnalyticsRepository.findByBookId(bookId)
                 .orElse(new BookAnalytics(null, bookId, 0, 0, 0));
-        analytics.setPurchaseCount(analytics.getPurchaseCount() + 1);
+
+        // LOGIC MỚI: Cộng dồn số lượng khách mua (quantity) thay vì chỉ cộng 1
+        analytics.setPurchaseCount(analytics.getPurchaseCount() + quantity);
+
         return bookAnalyticsMapper.toDto(bookAnalyticsRepository.save(analytics));
     }
 }
