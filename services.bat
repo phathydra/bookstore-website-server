@@ -21,7 +21,11 @@ start cmd /k mvn spring-boot:run
 cd ..
 
 cd RAG
-rag.py
+start cmd /k call rag.py
+cd ..
+
+cd recommend
+start cmd /k call recommended.bat
 cd ..
 
 exit
