@@ -1,4 +1,4 @@
-package com.tlcn.books.config; // Đặt chung package với SecurityConfig
+package com.tlcn.books.config;
 
 import com.tlcn.books.service.JwtService;
 import jakarta.servlet.FilterChain;
@@ -32,51 +32,54 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
-        final String accountId; // Username (ví dụ: email) chính là accountId
+        final String accountId;
 
         // 1. Kiểm tra header
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response); // Không có token, cho qua
+            filterChain.doFilter(request, response);
             return;
         }
 
         // 2. Lấy token
-        jwt = authHeader.substring(7); // Bỏ "Bearer "
+        jwt = authHeader.substring(7);
 
         try {
-            // 3. Giải mã token để lấy accountId
+            // 3. Giải mã token
             accountId = jwtService.extractUsername(jwt);
 
-            // 4. Kiểm tra xem user đã được xác thực chưa
+            // 4. Kiểm tra user chưa xác thực
             if (accountId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-                // 5. Kiểm tra token có hợp lệ không
+                // 5. Kiểm tra token hợp lệ
                 if (jwtService.isTokenValid(jwt)) {
-                    // Lấy quyền (roles) từ token
                     List<SimpleGrantedAuthority> authorities = jwtService.extractAuthorities(jwt);
 
-                    // Tạo đối tượng xác thực
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            accountId, // Đây chính là Principal
+                            accountId,
                             null,
-                            authorities // Quyền
+                            authorities
                     );
 
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource().buildDetails(request)
-                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                    // 6. ĐƯA USER VÀO SECURITY CONTEXT
-                    // Đây là bước mấu chốt để Principal hoạt động
+                    // 6. Set Authentication thành công
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-            filterChain.doFilter(request, response);
         } catch (Exception e) {
-            // Nếu token sai, hết hạn...
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Invalid or expired token");
-            return;
+            // 🛑 QUAN TRỌNG: SỬA ĐOẠN NÀY
+            // Nếu token lỗi (hết hạn, sai format...), TA KHÔNG TRẢ VỀ 401.
+            // Ta chỉ xóa context (để đảm bảo an toàn) và coi như user chưa đăng nhập.
+            SecurityContextHolder.clearContext();
+
+            // Log ra để debug nếu cần (có thể xóa dòng này khi chạy thật)
+            System.out.println("Token error (tiếp tục như khách vãng lai): " + e.getMessage());
         }
+
+        // 7. LUÔN CHO PHÉP REQUEST ĐI TIẾP
+        // Dù token đúng hay sai, request vẫn đi tiếp đến SecurityConfig.
+        // - Nếu sai token + vào trang public (/api/books) -> SecurityConfig cho qua (OK).
+        // - Nếu sai token + vào trang kín (/api/admin) -> SecurityConfig sẽ chặn (403).
+        filterChain.doFilter(request, response);
     }
 }
