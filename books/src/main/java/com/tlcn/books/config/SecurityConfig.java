@@ -31,34 +31,46 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 .authorizeHttpRequests(authorize -> authorize
+                        // Cho phép các yêu cầu Pre-flight (OPTIONS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Auth & Swagger
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // === BOOK (SỐ ÍT & SỐ NHIỀU) ===
+                        // === BOOK & CATALOG ===
                         .requestMatchers(HttpMethod.GET, "/api/book/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/books/**").permitAll()
-
-                        // === ANALYTICS & SUMMARY ===
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/book/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/summary").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/analytics/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/book/filter").permitAll()
+
+                        // === ANALYTICS & DASHBOARD (FIX LỖI 403) ===
+                        .requestMatchers(HttpMethod.GET, "/api/analytics/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/analytics/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/summary").permitAll()
+
+                        // === IMPORTS (QUẢN LÝ NHẬP HÀNG - FIX DÒNG NÀY) ===
+                        .requestMatchers("/api/imports/**").permitAll()
+
+                        // === REVIEWS ===
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/book/**").permitAll()
 
                         // === BANNER ===
                         .requestMatchers(HttpMethod.GET, "/api/banners/active").permitAll()
                         .requestMatchers("/api/banners/**").permitAll()
 
-                        // === BOOK MANAGEMENT (TEST) ===
+                        // === BOOK MANAGEMENT (Dành cho Admin/Test) ===
                         .requestMatchers(HttpMethod.POST, "/api/book/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/book/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/book/**").permitAll()
 
-                        // === DISCOUNT (ĐÃ SỬA) ===
-                        // Bỏ 'HttpMethod.GET' để cho phép cả PUT, POST, DELETE truy cập
+                        // === DISCOUNT ===
                         .requestMatchers("/api/discounts/**").permitAll()
 
+                        // Nếu Dashboard có gọi thêm Orders hoặc Users thì bổ sung tại đây:
+                        .requestMatchers("/api/orders/**").permitAll()
+                        .requestMatchers("/api/users/**").permitAll()
+
+                        // Tất cả các yêu cầu khác phải xác thực (Nếu chưa permitAll ở trên)
                         .anyRequest().authenticated()
                 )
 
@@ -71,10 +83,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Thêm các domain frontend của bạn vào đây
-        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001", "http://localhost:3002"));
+        // Cấu hình các domain Frontend được phép truy cập
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://localhost:3001",
+                "http://localhost:3002",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:3001",
+                "http://127.0.0.1:3002"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
