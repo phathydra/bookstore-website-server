@@ -25,7 +25,7 @@ start cmd /k call rag.py
 cd ..
 
 cd recommend
-start cmd /k call recommended.bat
+start cmd /k call recommend.bat
 cd ..
 
 exit
