@@ -24,4 +24,6 @@ public interface RankVoucherRepository extends MongoRepository<RankVoucher, Stri
     Page<RankVoucher> findByStartDateAfter(Date date, Pageable pageable);
 
     Optional<RankVoucher> getRankVoucherByCode(String code);
+
+    Optional<RankVoucher> findByCodeAndEndDateGreaterThanEqual(String code, Date endDate);
 }

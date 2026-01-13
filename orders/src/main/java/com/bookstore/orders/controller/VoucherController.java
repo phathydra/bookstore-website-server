@@ -60,9 +60,9 @@ public class VoucherController {
 
     // User personal vouchers
     @GetMapping("/personal-voucher")
-    public ResponseEntity<List<ObtainableVoucherDto>> getPersonalVoucher(@RequestParam String accountId){
-        List<ObtainableVoucherDto> obtainableVoucherDtos = iVoucherService.getAllPersonalVoucher(accountId);
-        return ResponseEntity.ok(obtainableVoucherDtos);
+    public ResponseEntity<List<BaseVoucherEntityDto>> getPersonalVoucher(@RequestParam String accountId){
+        List<BaseVoucherEntityDto> voucherDtos = iVoucherService.getAllPersonalVoucher(accountId);
+        return ResponseEntity.ok(voucherDtos);
     }
 
     // Public vouchers

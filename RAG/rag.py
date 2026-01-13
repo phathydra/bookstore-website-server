@@ -2,7 +2,9 @@ from pymongo import MongoClient
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from embeded import embed_faqs
 
 mongo_uri = "mongodb+srv://tlcn_user:tlcn_bookstore@cluster0.jmrvw.mongodb.net/"
 client = MongoClient(mongo_uri)
@@ -12,6 +14,16 @@ embedded_collection = db["faq_embeded"]
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 app = FastAPI(title="Bookstore FAQ Retrieval API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def retrieve_answer(user_question, top_k=1):
     """Tìm câu trả lời gần nhất trong MongoDB"""
@@ -33,6 +45,12 @@ def retrieve_answer(user_question, top_k=1):
         return best_doc["content"]
     else:
         return "Không tìm thấy câu trả lời phù hợp."
+    
+
+@app.post("/embed")
+async def trigger_embedding():
+    result = embed_faqs()
+    return result
     
 @app.post("/ask")
 async def ask_question(request: Request):

@@ -1,9 +1,6 @@
 package com.bookstore.orders.service.impl;
 
-import com.bookstore.orders.dto.ObtainableVoucherDto;
-import com.bookstore.orders.dto.OrderVoucherDto;
-import com.bookstore.orders.dto.RankVoucherDto;
-import com.bookstore.orders.dto.VoucherDto;
+import com.bookstore.orders.dto.*;
 import com.bookstore.orders.entity.*;
 import com.bookstore.orders.mapper.VoucherMapper;
 import com.bookstore.orders.repository.*;
@@ -106,25 +103,32 @@ public class VoucherServiceImpl implements IVoucherService {
     }
 
     @Override
-    public List<ObtainableVoucherDto> getAllPersonalVoucher(String accountId){
+    public List<BaseVoucherEntityDto> getAllPersonalVoucher(String accountId){
 
         List<ObtainedVoucher> obtainedVouchers = obtainedVoucherRepository.getObtainedVoucherByAccountId(accountId);
         if(obtainedVouchers.isEmpty()){
             return Collections.emptyList();
         }
         Date now = new Date();
-        List<ObtainableVoucherDto> obtainableVoucherDtos = new ArrayList<>();
+        List<BaseVoucherEntityDto> voucherDtos = new ArrayList<>();
         for(ObtainedVoucher voucher : obtainedVouchers){
             Optional<ObtainableVoucher> tempV = obtainableVoucherRepository.findByCodeAndEndDateGreaterThanEqual(voucher.getCode(), now);
             if(tempV.isPresent()){
                 ObtainableVoucherDto availableVoucher = VoucherMapper.toObtainableVoucherDto(tempV.get(), new ObtainableVoucherDto());
-                obtainableVoucherDtos.add(availableVoucher);
+                voucherDtos.add(availableVoucher);
             }
             else{
-                obtainedVoucherRepository.deleteByAccountIdAndCode(accountId, voucher.getCode());
+                Optional<RankVoucher> tempR = rankVoucherRepository.findByCodeAndEndDateGreaterThanEqual(voucher.getCode(), now);
+                if(tempR.isPresent()){
+                    RankVoucherDto availableVoucher = VoucherMapper.toRankVoucherDto(tempR.get(), new RankVoucherDto());
+                    voucherDtos.add(availableVoucher);
+                }
+                else{
+                    obtainedVoucherRepository.deleteByAccountIdAndCode(accountId, voucher.getCode());
+                }
             }
         }
-        return obtainableVoucherDtos;
+        return voucherDtos;
     }
 
     @Override

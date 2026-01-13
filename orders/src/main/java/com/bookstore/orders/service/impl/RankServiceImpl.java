@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -101,6 +103,9 @@ public class RankServiceImpl implements IRankService {
     @Override
     @Scheduled(cron = "0 30 0 1 * *", zone = "Asia/Ho_Chi_Minh")
     public void distributeMonthlyVouchers() {
+
+        resetRankVoucherDatesForCurrentMonth();
+
         List<Rank> ranks = rankRepository.findAll();
 
         // Chuẩn bị map rank -> voucher list
@@ -142,6 +147,29 @@ public class RankServiceImpl implements IRankService {
 
         obtainedVoucherRepository.save(ov);
     }
+
+    private void resetRankVoucherDatesForCurrentMonth() {
+        ZoneId zone = ZoneId.of("Asia/Ho_Chi_Minh");
+        LocalDate today = LocalDate.now(zone);
+        Date startDate = Date.from(
+                today.withDayOfMonth(1)
+                        .atStartOfDay(zone)
+                        .toInstant()
+        );
+        Date endDate = Date.from(
+                today.withDayOfMonth(today.lengthOfMonth())
+                        .atTime(23, 59, 59, 999_000_000)
+                        .atZone(zone)
+                        .toInstant()
+        );
+        List<RankVoucher> vouchers = rankVoucherRepository.findAll();
+        for (RankVoucher voucher : vouchers) {
+            voucher.setStartDate(startDate);
+            voucher.setEndDate(endDate);
+        }
+        rankVoucherRepository.saveAll(vouchers);
+    }
+
 
     @Override
     public RankDto createRank(RankDto rankDto){

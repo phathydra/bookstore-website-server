@@ -11,6 +11,8 @@ shipping/src/main/resources/application.yml
 recommend/venv/
 recommend/*.pyc
 recommend/__pycache__/
+recommend/log_tensorboard/
+recommend/saved/
 
 RAG/*.pyc
 RAG/__pycache__/

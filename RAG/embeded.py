@@ -16,24 +16,25 @@ splitter = RecursiveCharacterTextSplitter(
     chunk_overlap=50,
     separators=["\n", ".", "?", "!", ";"]
 )
+def embed_faqs():
+    faqs = list(faq_collection.find({}))
+    embedded_collection.delete_many({})
 
-faqs = list(faq_collection.find({}))
-embedded_collection.delete_many({})
+    for faq in tqdm(faqs, desc="Embedding FAQs"):
+        faq_id = str(faq["_id"])
+        question = faq.get("question", "")
+        answer = faq.get("answer", "")
+        content = f"Q: {question}\nA: {answer}"
 
-for faq in tqdm(faqs, desc="Embedding FAQs"):
-    faq_id = str(faq["_id"])
-    question = faq.get("question", "")
-    answer = faq.get("answer", "")
-    content = f"Q: {question}\nA: {answer}"
+        chunks = splitter.split_text(content)
 
-    chunks = splitter.split_text(content)
-
-    for chunk in chunks:
-        embedding_vector = model.encode(chunk).tolist()
-        embedded_collection.insert_one({
-            "faq_id": faq_id,
-            "content": chunk,
-            "embedding": embedding_vector
-        })
-
-print("Hoàn tất: FAQEmbedded đã có vector embedding.")
+        for chunk in chunks:
+            embedding_vector = model.encode(chunk).tolist()
+            embedded_collection.insert_one({
+                "faq_id": faq_id,
+                "content": chunk,
+                "embedding": embedding_vector
+            })
+    return {
+        "status": "success",
+    }

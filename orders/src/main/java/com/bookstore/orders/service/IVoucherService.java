@@ -1,9 +1,6 @@
 package com.bookstore.orders.service;
 
-import com.bookstore.orders.dto.ObtainableVoucherDto;
-import com.bookstore.orders.dto.OrderVoucherDto;
-import com.bookstore.orders.dto.RankVoucherDto;
-import com.bookstore.orders.dto.VoucherDto;
+import com.bookstore.orders.dto.*;
 import com.bookstore.orders.entity.ObtainableVoucher;
 import com.bookstore.orders.entity.Voucher;
 import org.springframework.data.domain.Page;
@@ -22,7 +19,7 @@ public interface IVoucherService {
 
     List<VoucherDto> getAllPublishVoucher(String userId);
 
-    List<ObtainableVoucherDto> getAllPersonalVoucher(String userId);
+    List<BaseVoucherEntityDto> getAllPersonalVoucher(String userId);
 
     List<ObtainableVoucherDto> getAllPublicClaimableVoucher(String userId);
 
