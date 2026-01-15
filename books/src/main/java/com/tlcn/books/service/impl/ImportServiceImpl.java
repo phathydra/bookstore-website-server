@@ -1,5 +1,7 @@
 package com.tlcn.books.service.impl;
 
+import com.tlcn.books.dto.ImportPreviewResponse;
+import com.tlcn.books.dto.ImportRequestDTO;
 import com.tlcn.books.entity.Book;
 import com.tlcn.books.entity.Import;
 import com.tlcn.books.repository.BookRepository;
@@ -24,12 +26,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ImportServiceImpl implements IImportService {
 
     private final ImportRepository importRepository;
-    private final BookRepository bookRepository; // Thêm BookRepository để thao tác với sách
+    private final BookRepository bookRepository;
 
     @Autowired
     public ImportServiceImpl(ImportRepository importRepository, BookRepository bookRepository) {
@@ -37,84 +40,51 @@ public class ImportServiceImpl implements IImportService {
         this.bookRepository = bookRepository;
     }
 
-    @Override
-    public Page<Import> findAllImports(LocalDateTime startDate, LocalDateTime endDate, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("importDate").descending());
+    // =================================================================================
+    // 1. SMART MATCHING ALGORITHMS
+    // =================================================================================
 
-        if (startDate != null && endDate != null) {
-            return importRepository.findByImportDateBetween(startDate, endDate, pageRequest);
-        } else {
-            return importRepository.findAll(pageRequest);
-        }
+    private String normalizeString(String input) {
+        if (input == null) return "";
+        return input.trim().replaceAll("\\s+", " ");
     }
 
-    @Override
-    public ByteArrayInputStream exportImportsByDateRange(LocalDateTime startDate, LocalDateTime endDate) throws IOException {
-        List<Import> imports;
-
-        if (startDate != null && endDate != null) {
-            imports = importRepository.findByImportDateBetween(startDate, endDate);
-        } else {
-            imports = importRepository.findAll();
+    private double calculateSimilarity(String s1, String s2) {
+        String longer = s1, shorter = s2;
+        if (s1.length() < s2.length()) {
+            longer = s2; shorter = s1;
         }
-
-        return exportImportsToExcel(imports);
+        int longerLength = longer.length();
+        if (longerLength == 0) return 1.0;
+        int editDistance = getLevenshteinDistance(longer, shorter);
+        return (longerLength - editDistance) / (double) longerLength;
     }
 
-    private ByteArrayInputStream exportImportsToExcel(List<Import> imports) throws IOException {
-        try (Workbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-
-            Sheet sheet = workbook.createSheet("Imports");
-            String[] headers = {
-                    "Import ID", "Book ID", "Book Name", "Author", "Supplier",
-                    "Quantity", "Import Price", "Import Date"
-            };
-
-            // Tạo style cho header
-            Font font = workbook.createFont();
-            font.setBold(true);
-            CellStyle headerCellStyle = workbook.createCellStyle();
-            headerCellStyle.setFont(font);
-
-            // Header row
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < headers.length; i++) {
-                Cell cell = headerRow.createCell(i);
-                cell.setCellValue(headers[i]);
-                cell.setCellStyle(headerCellStyle);
+    private int getLevenshteinDistance(String x, String y) {
+        int[][] dp = new int[x.length() + 1][y.length() + 1];
+        for (int i = 0; i <= x.length(); i++) dp[i][0] = i;
+        for (int j = 0; j <= y.length(); j++) dp[0][j] = j;
+        for (int i = 1; i <= x.length(); i++) {
+            for (int j = 1; j <= y.length(); j++) {
+                int cost = (x.charAt(i - 1) == y.charAt(j - 1)) ? 0 : 1;
+                dp[i][j] = Math.min(Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1), dp[i - 1][j - 1] + cost);
             }
-
-            int rowIdx = 1;
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
-            for (Import imp : imports) {
-                Row row = sheet.createRow(rowIdx++);
-                row.createCell(0).setCellValue(imp.getId());
-                row.createCell(1).setCellValue(imp.getBookId());
-                row.createCell(2).setCellValue(imp.getBookName());
-                row.createCell(3).setCellValue(imp.getBookAuthor());
-                row.createCell(4).setCellValue(imp.getBookSupplier());
-                row.createCell(5).setCellValue(imp.getQuantity() != null ? imp.getQuantity() : 0);
-                row.createCell(6).setCellValue(imp.getImportPrice() != null ? imp.getImportPrice() : 0.0);
-                row.createCell(7).setCellValue(
-                        imp.getImportDate() != null ? imp.getImportDate().format(formatter) : ""
-                );
-            }
-
-            // Auto-size columns
-            for (int i = 0; i < headers.length; i++) {
-                sheet.autoSizeColumn(i);
-            }
-
-            workbook.write(out);
-            return new ByteArrayInputStream(out.toByteArray());
         }
+        return dp[x.length()][y.length()];
     }
 
+    // =================================================================================
+    // 2. LOGIC PREVIEW & IMPORT (NÂNG CẤP)
+    // =================================================================================
+
     @Override
-    @Transactional
-    public void importBooksFromExcel(MultipartFile file) throws IOException {
+    public ImportPreviewResponse previewExcelContent(MultipartFile file) throws IOException {
+        ImportPreviewResponse response = new ImportPreviewResponse();
+        List<ImportRequestDTO> newBooks = new ArrayList<>();
+        List<ImportRequestDTO> existingBooks = new ArrayList<>();
+
+        List<Book> allBooksInDb = bookRepository.findAll();
+
         try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
@@ -122,89 +92,144 @@ public class ImportServiceImpl implements IImportService {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
-                String bookName = getCellValueAsString(row.getCell(0));   // Cột A
-                String bookAuthor = getCellValueAsString(row.getCell(1)); // Cột B
-                String bookSupplier = getCellValueAsString(row.getCell(2)); // Cột C
-                int quantity = getCellValueAsInt(row.getCell(3));        // Cột D
-                double importPrice = getCellValueAsDouble(row.getCell(4)); // Cột E
+                String rawName = getCellValueAsString(row.getCell(0));
+                String rawAuthor = getCellValueAsString(row.getCell(1));
+                String supplier = getCellValueAsString(row.getCell(2));
+                int quantity = getCellValueAsInt(row.getCell(3));
+                double price = getCellValueAsDouble(row.getCell(4));
 
-                if (bookName.isEmpty() || bookAuthor.isEmpty() || quantity <= 0) continue;
+                if (rawName.isEmpty() || rawAuthor.isEmpty() || quantity <= 0) continue;
 
-                Optional<Book> existingBookOpt = bookRepository.findByBookNameIgnoreCaseAndBookAuthorIgnoreCase(bookName, bookAuthor);
-                Book book;
-                String bookId;
+                String cleanName = normalizeString(rawName);
+                String cleanAuthor = normalizeString(rawAuthor);
 
-                if (existingBookOpt.isPresent()) {
-                    // Nếu sách đã tồn tại, cập nhật số lượng
-                    book = existingBookOpt.get();
-                    book.setBookStockQuantity(book.getBookStockQuantity() + quantity);
-                    bookRepository.save(book);
-                    bookId = book.getBookId();
+                ImportRequestDTO dto = new ImportRequestDTO();
+                dto.setBookName(cleanName);
+                dto.setBookAuthor(cleanAuthor);
+                dto.setBookSupplier(supplier);
+                dto.setBookStockQuantity(quantity);
+                dto.setImportPrice(price);
+
+                // BƯỚC 1: Tìm chính xác 100%
+                Optional<Book> exactMatch = allBooksInDb.stream()
+                        .filter(b -> b.getBookName().equalsIgnoreCase(cleanName) && b.getBookAuthor().equalsIgnoreCase(cleanAuthor))
+                        .findFirst();
+
+                if (exactMatch.isPresent()) {
+                    dto.setId(exactMatch.get().getBookId());
+                    existingBooks.add(dto);
                 } else {
-                    // Nếu sách chưa tồn tại, tạo mới
-                    book = new Book();
+                    // BƯỚC 2: Tìm danh sách các sách có khả năng giống (Top Suggestions)
+                    List<ImportRequestDTO.SuggestionDTO> matches = new ArrayList<>();
 
-                    // ❌ Không set ID thủ công — để MongoDB tự sinh ObjectId
-                    // book.setBookId(UUID.randomUUID().toString());
+                    for (Book dbBook : allBooksInDb) {
+                        // Chỉ so sánh nếu tác giả trùng (để tăng tốc và chính xác)
+                        if (dbBook.getBookAuthor().equalsIgnoreCase(cleanAuthor)) {
+                            double score = calculateSimilarity(cleanName.toLowerCase(), dbBook.getBookName().toLowerCase());
 
-                    book.setBookName(bookName);
-                    book.setBookAuthor(bookAuthor);
-                    book.setBookSupplier(bookSupplier);
-                    book.setBookStockQuantity(quantity);
+                            // Hạ ngưỡng xuống 0.4 (40%) để bắt được Tập 1 vs Tập 2
+                            if (score >= 0.40) {
+                                matches.add(new ImportRequestDTO.SuggestionDTO(
+                                        dbBook.getBookId(),
+                                        dbBook.getBookName(),
+                                        (int) Math.round(score * 100)
+                                ));
+                            }
+                        }
+                    }
 
-                    // ⚙️ Thêm mặc định để tránh null
-                    book.setBookImages(List.of("https://res.cloudinary.com/dfsxqmwkz/image/upload/v1761570462/li3gbhoqxbxouyidcbpm.jpg"));
-                    book.setBookPrice(importPrice > 0 ? importPrice : 0.0);
-                    book.setMainCategory("Chưa phân loại");
-                    book.setBookCategory("Chưa phân loại");
-                    book.setBookYearOfProduction(0);
-                    book.setBookPublisher("Không rõ");
-                    book.setBookLanguage("Không rõ");
-                    book.setBookDescription("Chưa có mô tả");
+                    // Sắp xếp theo độ giống giảm dần
+                    matches.sort((a, b) -> b.getSimilarity() - a.getSimilarity());
 
-                    // ✅ Khi save mà chưa có ID, MongoDB sẽ tự sinh ObjectId hợp lệ
-                    bookRepository.save(book);
+                    // Lấy Top 5 cuốn
+                    List<ImportRequestDTO.SuggestionDTO> topMatches = matches.stream().limit(5).collect(Collectors.toList());
 
-                    // ✅ Lấy ObjectId vừa được sinh ra (dưới dạng string)
-                    bookId = book.getBookId();
+                    dto.setId(UUID.randomUUID().toString()); // ID tạm
+                    dto.setSuggestions(topMatches);
+
+                    if (!topMatches.isEmpty()) {
+                        // Có gợi ý -> Đánh dấu cảnh báo
+                        ImportRequestDTO.SuggestionDTO best = topMatches.get(0);
+                        // Nếu độ giống > 50% thì mới set default, không thì chỉ hiện list
+                        if (best.getSimilarity() > 50) {
+                            dto.setWarning("Tìm thấy " + topMatches.size() + " sách tương tự. Bấm kính lúp để chọn.");
+                            dto.setSuggestedBookId(best.getId());
+                            dto.setSuggestedBookName(best.getName());
+                        }
+                    } else {
+                        dto.setMainCategory("Chưa phân loại");
+                    }
+                    newBooks.add(dto);
                 }
+            }
+        }
 
+        response.setNewBooks(newBooks);
+        response.setExistingBooks(existingBooks);
+        return response;
+    }
 
-                // Tạo bản ghi nhập kho
-                Import newImport = new Import();
-                newImport.setBookId(bookId);
-                newImport.setBookName(bookName);
-                newImport.setBookAuthor(bookAuthor);
-                newImport.setBookSupplier(bookSupplier);
-                newImport.setQuantity(quantity);
-                newImport.setImportPrice(importPrice);
-                newImport.setImportDate(LocalDateTime.now());
-                importRepository.save(newImport);
+    @Override
+    @Transactional
+    public void saveImportData(ImportPreviewResponse confirmedData) {
+        // 1. SÁCH MỚI
+        if (confirmedData.getNewBooks() != null) {
+            for (ImportRequestDTO dto : confirmedData.getNewBooks()) {
+                Book book = new Book();
+                book.setBookName(dto.getBookName());
+                book.setBookAuthor(dto.getBookAuthor());
+                book.setBookSupplier(dto.getBookSupplier());
+                book.setBookStockQuantity(dto.getBookStockQuantity());
+                book.setBookPrice(dto.getImportPrice() > 0 ? dto.getImportPrice() : 0.0);
+                book.setBookImages(List.of("https://res.cloudinary.com/dfsxqmwkz/image/upload/v1761570462/li3gbhoqxbxouyidcbpm.jpg"));
+                book.setMainCategory("Chưa phân loại");
+                book.setBookCategory("Chưa phân loại");
+                book.setBookYearOfProduction(0);
+                book.setBookPublisher("Không rõ");
+                book.setBookLanguage("Không rõ");
+                book.setBookDescription("Mô tả đang cập nhật");
+
+                bookRepository.save(book);
+                saveImportRecord(book.getBookId(), dto);
+            }
+        }
+
+        // 2. SÁCH CŨ
+        if (confirmedData.getExistingBooks() != null) {
+            for (ImportRequestDTO dto : confirmedData.getExistingBooks()) {
+                Optional<Book> bookOpt = bookRepository.findById(dto.getId());
+                if (bookOpt.isPresent()) {
+                    Book book = bookOpt.get();
+                    // Chỉ cộng dồn số lượng
+                    book.setBookStockQuantity(book.getBookStockQuantity() + dto.getBookStockQuantity());
+                    // Tuyệt đối KHÔNG cập nhật tên/tác giả để tránh sai lệch dữ liệu gốc
+                    bookRepository.save(book);
+                    saveImportRecord(book.getBookId(), dto);
+                }
             }
         }
     }
 
-    // Helper methods to safely get cell values
-    private String getCellValueAsString(Cell cell) {
-        if (cell == null) return "";
-        cell.setCellType(CellType.STRING);
-        return cell.getStringCellValue();
+    private void saveImportRecord(String bookId, ImportRequestDTO dto) {
+        Import imp = new Import();
+        imp.setBookId(bookId);
+        imp.setBookName(dto.getBookName());
+        imp.setBookAuthor(dto.getBookAuthor());
+        imp.setBookSupplier(dto.getBookSupplier());
+        imp.setQuantity(dto.getBookStockQuantity());
+        imp.setImportPrice(dto.getImportPrice());
+        imp.setImportDate(LocalDateTime.now());
+        importRepository.save(imp);
     }
 
-    private int getCellValueAsInt(Cell cell) {
-        if (cell == null) return 0;
-        if (cell.getCellType() == CellType.NUMERIC) {
-            return (int) cell.getNumericCellValue();
+    // --- CÁC HÀM CŨ GIỮ NGUYÊN (FindAll, Export, Helper...) ---
+    @Override
+    public Page<Import> findAllImports(LocalDateTime startDate, LocalDateTime endDate, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by("importDate").descending());
+        if (startDate != null && endDate != null) {
+            return importRepository.findByImportDateBetween(startDate, endDate, pageRequest);
         }
-        return 0;
-    }
-
-    private double getCellValueAsDouble(Cell cell) {
-        if (cell == null) return 0.0;
-        if (cell.getCellType() == CellType.NUMERIC) {
-            return cell.getNumericCellValue();
-        }
-        return 0.0;
+        return importRepository.findAll(pageRequest);
     }
 
     @Override
@@ -215,9 +240,70 @@ public class ImportServiceImpl implements IImportService {
         } else {
             imports = importRepository.findAll();
         }
+        return imports.stream().mapToDouble(imp -> imp.getQuantity() * imp.getImportPrice()).sum();
+    }
 
-        return imports.stream()
-                .mapToDouble(imp -> imp.getQuantity() * imp.getImportPrice())
-                .sum();
+    @Override
+    public ByteArrayInputStream exportImportsByDateRange(LocalDateTime startDate, LocalDateTime endDate) throws IOException {
+        List<Import> imports;
+        if (startDate != null && endDate != null) {
+            imports = importRepository.findByImportDateBetween(startDate, endDate);
+        } else {
+            imports = importRepository.findAll();
+        }
+        return exportImportsToExcel(imports);
+    }
+
+    private ByteArrayInputStream exportImportsToExcel(List<Import> imports) throws IOException {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Lịch sử nhập kho");
+            String[] headers = {"Import ID", "Book ID", "Book Name", "Author", "Supplier", "Quantity", "Import Price", "Import Date"};
+            Font font = workbook.createFont(); font.setBold(true);
+            CellStyle headerCellStyle = workbook.createCellStyle(); headerCellStyle.setFont(font);
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i); cell.setCellValue(headers[i]); cell.setCellStyle(headerCellStyle);
+            }
+            int rowIdx = 1;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            for (Import imp : imports) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(imp.getId());
+                row.createCell(1).setCellValue(imp.getBookId());
+                row.createCell(2).setCellValue(imp.getBookName());
+                row.createCell(3).setCellValue(imp.getBookAuthor());
+                row.createCell(4).setCellValue(imp.getBookSupplier());
+                row.createCell(5).setCellValue(imp.getQuantity() != null ? imp.getQuantity() : 0);
+                row.createCell(6).setCellValue(imp.getImportPrice() != null ? imp.getImportPrice() : 0.0);
+                row.createCell(7).setCellValue(imp.getImportDate() != null ? imp.getImportDate().format(formatter) : "");
+            }
+            for (int i = 0; i < headers.length; i++) sheet.autoSizeColumn(i);
+            workbook.write(out);
+            return new ByteArrayInputStream(out.toByteArray());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void importBooksFromExcel(MultipartFile file) throws IOException {
+        ImportPreviewResponse preview = previewExcelContent(file);
+        saveImportData(preview);
+    }
+
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return "";
+        try { cell.setCellType(CellType.STRING); return cell.getStringCellValue(); } catch (Exception e) { return ""; }
+    }
+    private int getCellValueAsInt(Cell cell) {
+        if (cell == null) return 0;
+        if (cell.getCellType() == CellType.NUMERIC) return (int) cell.getNumericCellValue();
+        else if (cell.getCellType() == CellType.STRING) { try { return Integer.parseInt(cell.getStringCellValue().trim()); } catch (Exception e) { return 0; } }
+        return 0;
+    }
+    private double getCellValueAsDouble(Cell cell) {
+        if (cell == null) return 0.0;
+        if (cell.getCellType() == CellType.NUMERIC) return cell.getNumericCellValue();
+        else if (cell.getCellType() == CellType.STRING) { try { return Double.parseDouble(cell.getStringCellValue().trim()); } catch (Exception e) { return 0.0; } }
+        return 0.0;
     }
 }

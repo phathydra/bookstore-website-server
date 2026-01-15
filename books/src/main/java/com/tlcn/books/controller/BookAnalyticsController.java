@@ -168,13 +168,14 @@ public class BookAnalyticsController {
     // 9. API Lấy sách xem gần đây
     @GetMapping("/recent-views")
     public ResponseEntity<List<String>> getRecentViews(
-            Principal principal,
+            @RequestParam(required = false) String accountId, // <--- Thay Principal bằng cái này
             @RequestParam(defaultValue = "5") int limit
     ) {
-        if (principal == null || principal.getName() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.emptyList());
+        // Nếu không có accountId (chưa đăng nhập), trả về list rỗng luôn
+        if (accountId == null || accountId.isEmpty() || "null".equals(accountId)) {
+            return ResponseEntity.ok(Collections.emptyList());
         }
-        String accountId = principal.getName();
+
         List<String> bookIds = interactionService.getRecentViewedBookIds(accountId, limit);
         return ResponseEntity.ok(bookIds);
     }
