@@ -42,7 +42,7 @@ def retrieve_answer(user_question, top_k=1):
             best_doc = doc
 
     if best_doc:
-        return best_doc["content"]
+        return best_doc["faq_id"]
     else:
         return "Không tìm thấy câu trả lời phù hợp."
     

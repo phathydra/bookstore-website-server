@@ -2,10 +2,13 @@ package com.bookstore.chatbot.service;
 
 import com.bookstore.chatbot.config.ChatbotApiKeyConfig;
 import com.bookstore.chatbot.entity.Book;
+import com.bookstore.chatbot.entity.FAQ;
+import com.bookstore.chatbot.repository.FAQRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -16,10 +19,14 @@ import com.bookstore.chatbot.dto.BookFilterInputDto;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class ChatbotService {
     private static final String API_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+    @Autowired
+    private FAQRepository faqRepository;
 
     private final ChatbotApiKeyConfig API_KEY;
 
@@ -92,7 +99,7 @@ public class ChatbotService {
         headers.set("Authorization", "Bearer " + API_KEY.getApikey());
 
         ObjectNode requestBody = objectMapper.createObjectNode();
-        requestBody.put("model", "mistralai/mistral-small-3.1-24b-instruct:free");
+        requestBody.put("model", "mistralai/mistral-7b-instruct:free");
         requestBody.put("stream", false);
 
         ArrayNode messages = objectMapper.createArrayNode();
@@ -188,7 +195,7 @@ public class ChatbotService {
             formattedResponse.append("Quý khách có thể nhấp vào tên sách để xem chi tiết. Chúc quý khách tìm được cuốn sách ưng ý!");
             return formattedResponse.toString();
         } catch (Exception e) {
-            return "Xin lỗi quý khách, có lỗi xảy ra khi tìm kiếm sách: " + e.getMessage() + ". Vui lòng thử lại sau.";
+            return "Xin lỗi quý khách, có lỗi xảy ra khi tìm kiếm sách. Vui lòng thử lại sau.";
         }
     }
 
@@ -201,19 +208,23 @@ public class ChatbotService {
             ResponseEntity<String> response = bookServiceRestTemplate.postForEntity(url, body, String.class);
 
             JsonNode jsonResponse = objectMapper.readTree(response.getBody());
-            String answer = jsonResponse.has("answer")
+            String faq_id = jsonResponse.has("answer")
                     ? jsonResponse.get("answer").asText()
+                    : "";
+            Optional<FAQ> faq = faqRepository.findById(faq_id);
+            String answer = faq.isPresent()
+                    ? faq.get().getAnswer()
                     : "Không tìm thấy câu trả lời phù hợp cho câu hỏi của quý khách.";
             
             StringBuilder formattedResponse = new StringBuilder();
-            formattedResponse.append("Tôi đã tìm thấy thông tin sau cho câu hỏi của quý khách:<br />");
+            formattedResponse.append("Tôi đã tìm thấy thông tin sau cho câu hỏi của quý khách:<br /><br />");
             formattedResponse.append(answer);
             formattedResponse.append("<br /><br />Cảm ơn quý khách đã liên hệ với chúng tôi!");
 
             return formattedResponse.toString();
 
         } catch (Exception e) {
-            return "Xin lỗi quý khách, có lỗi xảy ra khi truy vấn thông tin FAQ: " + e.getMessage() + ". Vui lòng thử lại sau.";
+            return "Xin lỗi quý khách, có lỗi xảy ra khi truy vấn thông tin FAQ. Vui lòng thử lại sau.";
         }
     }
 
