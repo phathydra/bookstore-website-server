@@ -1,5 +1,6 @@
 package com.tlcn.books.service;
 
+import com.tlcn.books.dto.ImportPreviewResponse;
 import com.tlcn.books.entity.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,4 +14,10 @@ public interface IImportService {
     ByteArrayInputStream exportImportsByDateRange(LocalDateTime startDate, LocalDateTime endDate) throws IOException;
     void importBooksFromExcel(MultipartFile file) throws IOException;
     double calculateTotalImportPrice(LocalDateTime startDate, LocalDateTime endDate);
+
+    // Hàm mới: Xem trước nội dung Excel (Cần throws IOException)
+    ImportPreviewResponse previewExcelContent(MultipartFile file) throws IOException;
+
+    // Hàm mới: Lưu dữ liệu sau khi confirm (Không cần throws IOException)
+    void saveImportData(ImportPreviewResponse confirmedData);
 }

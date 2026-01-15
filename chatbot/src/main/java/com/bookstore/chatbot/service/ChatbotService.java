@@ -92,7 +92,7 @@ public class ChatbotService {
         headers.set("Authorization", "Bearer " + API_KEY.getApikey());
 
         ObjectNode requestBody = objectMapper.createObjectNode();
-        requestBody.put("model", "mistralai/mistral-small-3.1-24b-instruct:free");
+        requestBody.put("model", "mistralai/mistral-7b-instruct:free");
         requestBody.put("stream", false);
 
         ArrayNode messages = objectMapper.createArrayNode();

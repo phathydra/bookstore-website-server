@@ -1,5 +1,6 @@
 package com.tlcn.books.controller;
 
+import com.tlcn.books.dto.ImportPreviewResponse;
 import com.tlcn.books.service.IImportService;
 import com.tlcn.books.entity.Import;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,6 +96,26 @@ public class ImportController {
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/preview")
+    public ResponseEntity<?> previewExcel(@RequestParam("file") MultipartFile file) {
+        try {
+            ImportPreviewResponse preview = iImportService.previewExcelContent(file);
+            return ResponseEntity.ok(preview);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi đọc file: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/confirm-import")
+    public ResponseEntity<?> confirmImport(@RequestBody ImportPreviewResponse confirmedData) {
+        try {
+            iImportService.saveImportData(confirmedData);
+            return ResponseEntity.ok("Nhập kho thành công!");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Lỗi hệ thống: " + e.getMessage());
         }
     }
 }
